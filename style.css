@@ -1,0 +1,188 @@
+:root {
+  --bg: #0f1115;
+  --panel: #151925;
+  --panel2: #101522;
+  --text: #e7e9ee;
+  --muted: #a9b0c3;
+  --border: rgba(255,255,255,.10);
+  --danger: #ff6b6b;
+
+  --chip: rgba(255,255,255,.06);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+}
+
+.brand .name { font-weight: 700; letter-spacing: .2px; }
+.brand .ver { font-weight: 600; color: var(--muted); margin-left: 6px; font-size: 12px; }
+.brand .tagline { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.controls { display: flex; align-items: center; gap: 10px; }
+.status { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 70px; text-align: center; }
+
+.btn {
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn:hover { border-color: rgba(255,255,255,.22); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+.pane {
+  min-height: 0;
+  display: grid;
+  border-right: 1px solid var(--border);
+}
+.pane:last-child { border-right: none; }
+
+.pane-title {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  background: rgba(255,255,255,.02);
+}
+
+/* editor pane: title, outline, editor, diagnostics */
+.editor {
+  background: var(--panel);
+  grid-template-rows: auto auto 1fr auto;
+}
+
+#editor { width: 100%; height: 100%; }
+
+/* Outline */
+.outline {
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.outline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.outline-title { font-size: 12px; color: var(--muted); }
+.outline-meta {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--chip);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+.outline-list {
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+.outline-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.outline-item:hover {
+  border-color: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.05);
+}
+.outline-item.active {
+  border-color: rgba(122,162,255,.65);
+  background: rgba(122,162,255,.12);
+}
+.outline-num {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.outline-text { display: grid; gap: 2px; min-width: 0; }
+.outline-titleline {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.outline-sub { font-size: 12px; color: var(--muted); }
+
+/* Diagnostics */
+.errors {
+  border-top: 1px solid var(--border);
+  background: var(--panel2);
+}
+.errors-title {
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+#errors {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--danger);
+  font-size: 12px;
+  min-height: 40px;
+  white-space: pre-wrap;
+}
+
+/* Preview pane */
+.preview {
+  grid-template-rows: auto 1fr;
+  background: #0d0f14;
+}
+.preview-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  min-height: 0;
+}
+#slide {
+  width: min(95%, 900px);
+  height: auto;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 10px 35px rgba(0,0,0,.35);
+}

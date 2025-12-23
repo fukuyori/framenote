@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FrameNote v0.1</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="name">FrameNote <span class="ver">v0.1</span></div>
+        <div class="tagline">Notes that become frames.</div>
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" class="btn" title="Previous slide (PageUp)">← Prev</button>
+        <div class="status">
+          <span id="slideIndex">0</span>/<span id="slideCount">0</span>
+        </div>
+        <button id="nextBtn" class="btn" title="Next slide (PageDown)">Next →</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="pane editor">
+        <div class="pane-title">Script</div>
+
+        <!-- Outline -->
+        <div class="outline">
+          <div class="outline-head">
+            <div class="outline-title">Slide Outline</div>
+            <div class="outline-meta"><span id="outlineCount">0</span> slides</div>
+          </div>
+          <div class="outline-list" id="outlineList" role="list"></div>
+        </div>
+
+        <div id="editor"></div>
+
+        <div class="errors">
+          <div class="errors-title">Diagnostics</div>
+          <pre id="errors"></pre>
+        </div>
+      </section>
+
+      <section class="pane preview">
+        <div class="pane-title">Preview (16:9)</div>
+        <div class="preview-wrap">
+          <svg id="slide" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Monaco Editor loader (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
