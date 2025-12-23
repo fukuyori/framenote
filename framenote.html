@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrameNote v0.2 - Text-First Slide Tool</title>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f0f0f;
+      --bg-panel: #1a1a1a;
+      --bg-surface: #242424;
+      --bg-hover: #2d2d2d;
+      --border: #333;
+      --border-focus: #555;
+      --text-primary: #f5f5f5;
+      --text-secondary: #888;
+      --text-muted: #666;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-dim: rgba(59, 130, 246, 0.15);
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+      --slide-bg: #ffffff;
+      --slide-text: #1a1a1a;
+      --slide-accent: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* App Layout */
+    .app {
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      grid-template-columns: 240px 1fr 1fr;
+      height: 100vh;
+    }
+
+    /* Header */
+    header {
+      grid-column: 1 / -1;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .logo h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-version {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-focus);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    /* Sidebar - Outline */
+    .sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+
+    .slide-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .outline-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .outline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.1s;
+      margin-bottom: 4px;
+    }
+
+    .outline-item:hover {
+      background: var(--bg-surface);
+    }
+
+    .outline-item.active {
+      background: var(--accent-dim);
+    }
+
+    .outline-item.error {
+      border-left: 2px solid var(--error);
+    }
+
+    .outline-number {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 20px;
+    }
+
+    .outline-title {
+      font-size: 12px;
+      color: var(--text-primary);
+      line-height: 1.4;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .outline-item.active .outline-number,
+    .outline-item.active .outline-title {
+      color: var(--accent);
+    }
+
+    /* Editor Panel */
+    .editor-panel {
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .editor-tabs {
+      display: flex;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .editor-tab {
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .editor-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .editor-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+    }
+
+    .editor-content {
+      flex: 1;
+      display: none;
+    }
+
+    .editor-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #monaco-container {
+      flex: 1;
+    }
+
+    /* Image Manager */
+    .image-manager {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .drop-zone-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .drop-zone-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+
+    .image-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .image-item:hover {
+      border-color: var(--accent);
+      transform: scale(1.02);
+    }
+
+    .image-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-item-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      padding: 4px;
+    }
+
+    .image-item:hover .image-item-overlay {
+      opacity: 1;
+    }
+
+    .image-item-name {
+      font-size: 9px;
+      color: #fff;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .image-item-delete {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--error);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .image-item:hover .image-item-delete {
+      opacity: 1;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+
+    .preview-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-nav-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .preview-nav-btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+    }
+
+    .preview-nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .preview-indicator {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .preview-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    /* SVG Slide */
+    .slide-frame {
+      width: 100%;
+      max-width: 720px;
+      aspect-ratio: 16 / 9;
+      background: var(--slide-bg);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .slide-frame svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Diagnostics Panel */
+    .diagnostics {
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .diagnostics-header {
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-panel);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-indicator.success { background: var(--success); }
+    .status-indicator.warning { background: var(--warning); }
+    .status-indicator.error { background: var(--error); }
+
+    .diagnostics-list {
+      padding: 8px 16px;
+    }
+
+    .diagnostic-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .diagnostic-code {
+      font-weight: 600;
+    }
+
+    .diagnostic-code.error { color: var(--error); }
+    .diagnostic-code.warning { color: var(--warning); }
+
+    .diagnostic-where {
+      color: var(--accent);
+    }
+
+    .diagnostic-msg {
+      color: var(--text-secondary);
+    }
+
+    /* Slideshow Modal */
+    .slideshow-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .slideshow-modal.active {
+      display: flex;
+    }
+
+    .slideshow-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+
+    .slideshow-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .slideshow-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    .slideshow-frame {
+      width: 100%;
+      max-width: 1400px;
+      aspect-ratio: 16 / 9;
+      background: var(--slide-bg);
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .slideshow-frame svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .slideshow-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 20px;
+    }
+
+    .slideshow-nav button {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .slideshow-nav button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .slideshow-nav button:disabled {
+      opacity: 0.3;
+    }
+
+    .slideshow-indicator {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 13px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-focus);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">F</div>
+        <h1>FrameNote</h1>
+        <span class="logo-version">v0.2</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="loadSample()">📄 Sample</button>
+        <button class="btn" onclick="exportYAML()">💾 Export</button>
+        <button class="btn btn-primary" onclick="startSlideshow()">▶ Present</button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Outline</span>
+        <span class="slide-count" id="slide-count">0 slides</span>
+      </div>
+      <div class="outline-list" id="outline-list"></div>
+    </aside>
+
+    <main class="editor-panel">
+      <div class="editor-tabs">
+        <div class="editor-tab active" data-tab="code">PDL Editor</div>
+        <div class="editor-tab" data-tab="images">Images</div>
+      </div>
+      <div class="editor-content active" id="tab-code">
+        <div id="monaco-container"></div>
+      </div>
+      <div class="editor-content" id="tab-images">
+        <div class="image-manager">
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">Drop images here or click to upload</div>
+          </div>
+          <input type="file" id="file-input" accept="image/*" multiple hidden>
+          <div class="image-grid" id="image-grid"></div>
+        </div>
+      </div>
+    </main>
+
+    <section class="preview-panel">
+      <div class="preview-header">
+        <span class="preview-title">Preview</span>
+        <div class="preview-nav">
+          <button class="preview-nav-btn" id="prev-btn" onclick="prevSlide()">◀</button>
+          <span class="preview-indicator" id="preview-indicator">0 / 0</span>
+          <button class="preview-nav-btn" id="next-btn" onclick="nextSlide()">▶</button>
+        </div>
+      </div>
+      <div class="preview-container" id="preview-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">📽️</div>
+          <div class="empty-state-text">Write PDL to preview slides</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="diagnostics" style="grid-column: 2 / -1;">
+      <div class="diagnostics-header">
+        <div class="status-indicator success" id="status-dot"></div>
+        <span id="status-text">Ready</span>
+      </div>
+      <div class="diagnostics-list" id="diagnostics-list"></div>
+    </footer>
+  </div>
+
+  <div class="slideshow-modal" id="slideshow-modal">
+    <button class="slideshow-close" onclick="closeSlideshow()">✕</button>
+    <div class="slideshow-container">
+      <div class="slideshow-frame" id="slideshow-frame"></div>
+    </div>
+    <div class="slideshow-nav">
+      <button id="slideshow-prev" onclick="slideshowPrev()">◀ Prev</button>
+      <span class="slideshow-indicator" id="slideshow-indicator">1 / 1</span>
+      <button id="slideshow-next" onclick="slideshowNext()">Next ▶</button>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // State
+    // ========================================
+    let pdlData = null;
+    let currentSlide = 0;
+    let slideshowIndex = 0;
+    let images = {};
+    let issues = [];
+    let monacoEditor = null;
+
+    // ========================================
+    // Monaco Editor Setup
+    // ========================================
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+
+    // Disable web workers to avoid CORS issues in CDN environment
+    window.MonacoEnvironment = {
+      getWorker: function() {
+        return null;
+      }
+    };
+
+    require(['vs/editor/editor.main'], function() {
+      // Register PDL language
+      monaco.languages.register({ id: 'pdl' });
+
+      // Syntax highlighting
+      monaco.languages.setMonarchTokensProvider('pdl', {
+        tokenizer: {
+          root: [
+            [/#.*$/, 'comment'],
+            [/\b(meta|slides|title|body|text|figure|caption|style|notes|src|alt|split|ref|layout|size|weight|align|tone|importance|diagram)\b/, 'keyword'],
+            [/\b(center|stack|horizontal|vertical|small|medium|large|normal|bold|left|right|low|high|text|figure_caption|figure_bullets|figure_reference)\b/, 'type'],
+            [/"[^"]*"/, 'string'],
+            [/'[^']*'/, 'string'],
+            [/:\s*/, 'delimiter'],
+            [/-\s+/, 'delimiter'],
+            [/\d+/, 'number'],
+          ]
+        }
+      });
+
+      // Theme
+      monaco.editor.defineTheme('framenote-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: '60a5fa', fontStyle: 'bold' },
+          { token: 'type', foreground: 'a78bfa' },
+          { token: 'string', foreground: '4ade80' },
+          { token: 'comment', foreground: '666666' },
+          { token: 'delimiter', foreground: '888888' },
+          { token: 'number', foreground: 'fbbf24' },
+        ],
+        colors: {
+          'editor.background': '#0f0f0f',
+          'editor.foreground': '#f5f5f5',
+          'editor.lineHighlightBackground': '#1a1a1a',
+          'editorCursor.foreground': '#3b82f6',
+          'editor.selectionBackground': '#3b82f640',
+        }
+      });
+
+      // Completions
+      monaco.languages.registerCompletionItemProvider('pdl', {
+        provideCompletionItems: (model, position) => {
+          const suggestions = [
+            // Snippets
+            {
+              label: 'slide',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '- title: ${1:Title}\n  body:\n    text:\n      - ${2:Item}',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Create a new slide'
+            },
+            {
+              label: 'slide-figure',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '- title: ${1:Title}\n  body:\n    style: figure_caption\n    figure: ${2:image.png}\n    caption: ${3:Caption}\n    text:\n      - ${4:Description}',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Slide with figure'
+            },
+            {
+              label: 'slide-split',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '- title: ${1:Title}\n  body:\n    style: split\n    split:\n      a:\n        text:\n          - ${2:Left content}\n      b:\n        text:\n          - ${3:Right content}',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Split layout slide'
+            },
+            {
+              label: 'diagram',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'diagram:\n  boxes:\n    - ${1:Step 1}\n    - ${2:Step 2}\n    - ${3:Step 3}',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Box-arrow diagram'
+            },
+            // Keywords
+            { label: 'meta', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'meta:\n  project: ' },
+            { label: 'slides', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'slides:\n  ' },
+            { label: 'title', kind: monaco.languages.CompletionItemKind.Property, insertText: 'title: ' },
+            { label: 'body', kind: monaco.languages.CompletionItemKind.Property, insertText: 'body:\n    ' },
+            { label: 'text', kind: monaco.languages.CompletionItemKind.Property, insertText: 'text:\n      - ' },
+            { label: 'figure', kind: monaco.languages.CompletionItemKind.Property, insertText: 'figure: ' },
+            { label: 'caption', kind: monaco.languages.CompletionItemKind.Property, insertText: 'caption: ' },
+            { label: 'style', kind: monaco.languages.CompletionItemKind.Property, insertText: 'style: ' },
+            { label: 'notes', kind: monaco.languages.CompletionItemKind.Property, insertText: 'notes: ' },
+            // Values
+            { label: 'center', kind: monaco.languages.CompletionItemKind.Value, insertText: 'center' },
+            { label: 'stack', kind: monaco.languages.CompletionItemKind.Value, insertText: 'stack' },
+            { label: 'split', kind: monaco.languages.CompletionItemKind.Value, insertText: 'split' },
+            { label: 'figure_caption', kind: monaco.languages.CompletionItemKind.Value, insertText: 'figure_caption' },
+            { label: 'figure_bullets', kind: monaco.languages.CompletionItemKind.Value, insertText: 'figure_bullets' },
+          ];
+          return { suggestions };
+        }
+      });
+
+      // Create editor
+      monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+        value: '',
+        language: 'pdl',
+        theme: 'framenote-dark',
+        fontSize: 13,
+        fontFamily: "'JetBrains Mono', monospace",
+        lineNumbers: 'on',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        tabSize: 2,
+        wordWrap: 'on',
+        padding: { top: 16 },
+      });
+
+      // Listen for changes
+      monacoEditor.onDidChangeModelContent(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(parsePDL, 300);
+      });
+
+      // Load initial sample
+      loadSample();
+    });
+
+    let debounceTimer;
+
+    // ========================================
+    // Tab handling
+    // ========================================
+    document.querySelectorAll('.editor-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.editor-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ========================================
+    // PDL Parser & Validator
+    // ========================================
+    function parsePDL() {
+      const content = monacoEditor ? monacoEditor.getValue().trim() : '';
+      issues = [];
+      pdlData = null;
+
+      if (!content) {
+        updateUI();
+        return;
+      }
+
+      try {
+        pdlData = jsyaml.load(content);
+        validatePDL(pdlData);
+      } catch (e) {
+        issues.push({
+          code: 'PDL-EPARSE',
+          where: `line ${e.mark?.line || '?'}`,
+          message: e.reason || e.message
+        });
+      }
+
+      updateUI();
+    }
+
+    function validatePDL(data) {
+      if (!data || typeof data !== 'object') {
+        issues.push({ code: 'PDL-ESCH001', where: 'document', message: 'Document must be an object' });
+        return;
+      }
+
+      if (!data.slides) {
+        issues.push({ code: 'PDL-ESCH002', where: 'document', message: 'slides is required' });
+        return;
+      }
+
+      if (!Array.isArray(data.slides)) {
+        issues.push({ code: 'PDL-ESCH003', where: 'slides', message: 'slides must be an array' });
+        return;
+      }
+
+      if (data.slides.length === 0) {
+        issues.push({ code: 'PDL-WFMT002', where: 'slides', message: 'slides array is empty' });
+      }
+
+      data.slides.forEach((slide, i) => validateSlide(slide, i));
+    }
+
+    function validateSlide(slide, index) {
+      const where = `slides[${index}]`;
+
+      if (!slide || typeof slide !== 'object') {
+        issues.push({ code: 'PDL-ESCH004', where, message: 'Slide must be an object' });
+        return;
+      }
+
+      if (!slide.title) {
+        issues.push({ code: 'PDL-ESCH005', where: `${where}.title`, message: 'title is required' });
+      } else if (slide.title.trim() === '') {
+        issues.push({ code: 'PDL-WSEM001', where: `${where}.title`, message: 'title is empty' });
+      }
+
+      if (!slide.body) {
+        issues.push({ code: 'PDL-ESCH007', where: `${where}.body`, message: 'body is required' });
+        return;
+      }
+
+      validateBody(slide.body, `${where}.body`);
+    }
+
+    function validateBody(body, where) {
+      if (typeof body !== 'object') {
+        issues.push({ code: 'PDL-ESCH008', where, message: 'body must be an object' });
+        return;
+      }
+
+      const { text, figure, caption, style, split, diagram } = body;
+
+      if (style === 'figure_caption' || style === 'figure_bullets') {
+        if (!figure) {
+          issues.push({ code: 'PDL-ESEM002', where: `${where}.figure`, message: `style "${style}" requires figure` });
+        }
+      }
+
+      if (figure && !text && !caption) {
+        issues.push({ code: 'PDL-ESEM003', where, message: 'figure requires text or caption' });
+      }
+
+      if (Array.isArray(text) && text.length > 7) {
+        issues.push({ code: 'PDL-WFMT001', where: `${where}.text`, message: `too many bullet points (${text.length})` });
+      }
+
+      if (style === 'split' && !split) {
+        issues.push({ code: 'PDL-ESEM004', where, message: 'style "split" requires split object' });
+      }
+    }
+
+    // ========================================
+    // SVG Renderer
+    // ========================================
+    function renderSlideSVG(slide, width = 1280, height = 720) {
+      const title = escapeXml(slide.title || 'Untitled');
+      const body = slide.body || {};
+      const style = body.style || detectStyle(body);
+
+      let content = '';
+
+      switch (style) {
+        case 'split':
+          content = renderSplitLayout(body, width, height);
+          break;
+        case 'figure_caption':
+        case 'figure_bullets':
+          content = renderFigureLayout(body, width, height);
+          break;
+        default:
+          content = renderTextLayout(body, width, height);
+      }
+
+      return `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
+          <defs>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap');
+              .title { font: 700 48px 'Inter', 'Noto Sans JP', sans-serif; fill: #1a1a1a; }
+              .body-text { font: 400 24px 'Inter', 'Noto Sans JP', sans-serif; fill: #333; }
+              .bullet { font: 400 24px 'Inter', 'Noto Sans JP', sans-serif; fill: #333; }
+              .caption { font: 400 16px 'Inter', 'Noto Sans JP', sans-serif; fill: #666; }
+              .note { font: italic 14px 'Inter', 'Noto Sans JP', sans-serif; fill: #888; }
+              .diagram-box { fill: #3b82f6; rx: 8; }
+              .diagram-text { font: 500 16px 'Inter', 'Noto Sans JP', sans-serif; fill: white; text-anchor: middle; }
+              .diagram-arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+            </style>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+            </marker>
+          </defs>
+          <rect width="${width}" height="${height}" fill="white"/>
+          <text x="64" y="100" class="title">${title}</text>
+          <line x1="64" y1="120" x2="${width - 64}" y2="120" stroke="#e5e5e5" stroke-width="2"/>
+          ${content}
+          ${slide.notes ? `<text x="64" y="${height - 40}" class="note">📝 ${escapeXml(slide.notes)}</text>` : ''}
+        </svg>
+      `;
+    }
+
+    function detectStyle(body) {
+      if (body.split) return 'split';
+      if (body.figure) return 'figure_caption';
+      if (body.diagram) return 'diagram';
+      return 'text';
+    }
+
+    function renderTextLayout(body, width, height) {
+      const text = body.text;
+      const diagram = body.diagram;
+      let svg = '';
+      let y = 180;
+
+      if (Array.isArray(text)) {
+        text.forEach((item, i) => {
+          svg += `<circle cx="84" cy="${y - 8}" r="6" fill="#3b82f6"/>`;
+          svg += `<text x="110" y="${y}" class="bullet">${escapeXml(item)}</text>`;
+          y += 48;
+        });
+      } else if (text) {
+        const lines = wrapText(text, 60);
+        lines.forEach(line => {
+          svg += `<text x="64" y="${y}" class="body-text">${escapeXml(line)}</text>`;
+          y += 36;
+        });
+      }
+
+      if (diagram) {
+        svg += renderDiagram(diagram, 64, y + 20, width - 128);
+      }
+
+      return svg;
+    }
+
+    function renderFigureLayout(body, width, height) {
+      const text = body.text;
+      const figure = body.figure;
+      const caption = body.caption;
+      let svg = '';
+
+      // Text on left
+      const textX = 64;
+      const textWidth = width * 0.5 - 80;
+      let y = 180;
+
+      if (Array.isArray(text)) {
+        text.forEach(item => {
+          svg += `<circle cx="84" cy="${y - 8}" r="6" fill="#3b82f6"/>`;
+          svg += `<text x="110" y="${y}" class="bullet">${escapeXml(item)}</text>`;
+          y += 48;
+        });
+      } else if (text) {
+        const lines = wrapText(text, 35);
+        lines.forEach(line => {
+          svg += `<text x="${textX}" y="${y}" class="body-text">${escapeXml(line)}</text>`;
+          y += 36;
+        });
+      }
+
+      // Figure on right
+      const figX = width * 0.55;
+      const figY = 160;
+      const figW = width * 0.4;
+      const figH = height * 0.55;
+      const src = typeof figure === 'string' ? figure : figure?.src;
+      const imgSrc = images[src] || src;
+
+      svg += `<rect x="${figX}" y="${figY}" width="${figW}" height="${figH}" fill="#f5f5f5" rx="8"/>`;
+      if (imgSrc) {
+        svg += `<image x="${figX}" y="${figY}" width="${figW}" height="${figH}" href="${escapeXml(imgSrc)}" preserveAspectRatio="xMidYMid meet"/>`;
+      }
+      if (caption) {
+        svg += `<text x="${figX + figW/2}" y="${figY + figH + 30}" class="caption" text-anchor="middle">${escapeXml(caption)}</text>`;
+      }
+
+      return svg;
+    }
+
+    function renderSplitLayout(body, width, height) {
+      const split = body.split || {};
+      const direction = split.direction || 'horizontal';
+      const ratio = split.ratio || 0.5;
+      let svg = '';
+
+      if (direction === 'horizontal') {
+        const leftW = (width - 128) * ratio;
+        const rightW = (width - 128) * (1 - ratio);
+        
+        svg += renderPaneContent(split.a, 64, 160, leftW - 32, height - 220);
+        svg += `<line x1="${64 + leftW}" y1="160" x2="${64 + leftW}" y2="${height - 60}" stroke="#e5e5e5" stroke-width="1"/>`;
+        svg += renderPaneContent(split.b, 64 + leftW + 32, 160, rightW - 32, height - 220);
+      } else {
+        const topH = (height - 180) * ratio;
+        const botH = (height - 180) * (1 - ratio);
+        
+        svg += renderPaneContent(split.a, 64, 160, width - 128, topH - 20);
+        svg += `<line x1="64" y1="${160 + topH}" x2="${width - 64}" y2="${160 + topH}" stroke="#e5e5e5" stroke-width="1"/>`;
+        svg += renderPaneContent(split.b, 64, 160 + topH + 20, width - 128, botH - 20);
+      }
+
+      return svg;
+    }
+
+    function renderPaneContent(pane, x, y, w, h) {
+      if (!pane) return '';
+      let svg = '';
+      let curY = y;
+
+      if (Array.isArray(pane.text)) {
+        pane.text.forEach(item => {
+          svg += `<circle cx="${x + 20}" cy="${curY + 4}" r="5" fill="#3b82f6"/>`;
+          svg += `<text x="${x + 40}" y="${curY + 12}" class="bullet" style="font-size: 20px;">${escapeXml(item)}</text>`;
+          curY += 40;
+        });
+      } else if (pane.text) {
+        const lines = wrapText(pane.text, Math.floor(w / 14));
+        lines.forEach(line => {
+          svg += `<text x="${x}" y="${curY + 12}" class="body-text" style="font-size: 20px;">${escapeXml(line)}</text>`;
+          curY += 32;
+        });
+      }
+
+      if (pane.figure) {
+        const src = typeof pane.figure === 'string' ? pane.figure : pane.figure?.src;
+        const imgSrc = images[src] || src;
+        if (imgSrc) {
+          svg += `<image x="${x}" y="${curY + 10}" width="${w}" height="${h - (curY - y) - 20}" href="${escapeXml(imgSrc)}" preserveAspectRatio="xMidYMid meet"/>`;
+        }
+      }
+
+      return svg;
+    }
+
+    function renderDiagram(diagram, x, y, maxWidth) {
+      if (!diagram.boxes || !Array.isArray(diagram.boxes)) return '';
+      
+      const boxes = diagram.boxes;
+      const boxW = Math.min(150, (maxWidth - (boxes.length - 1) * 40) / boxes.length);
+      const boxH = 50;
+      const gap = 40;
+      const totalW = boxes.length * boxW + (boxes.length - 1) * gap;
+      const startX = x + (maxWidth - totalW) / 2;
+      
+      let svg = '';
+      boxes.forEach((label, i) => {
+        const bx = startX + i * (boxW + gap);
+        svg += `<rect x="${bx}" y="${y}" width="${boxW}" height="${boxH}" class="diagram-box"/>`;
+        svg += `<text x="${bx + boxW/2}" y="${y + boxH/2 + 6}" class="diagram-text">${escapeXml(label)}</text>`;
+        if (i < boxes.length - 1) {
+          svg += `<line x1="${bx + boxW + 5}" y1="${y + boxH/2}" x2="${bx + boxW + gap - 5}" y2="${y + boxH/2}" class="diagram-arrow"/>`;
+        }
+      });
+      
+      return svg;
+    }
+
+    function wrapText(text, maxChars) {
+      const words = text.split(' ');
+      const lines = [];
+      let current = '';
+      
+      words.forEach(word => {
+        if ((current + ' ' + word).trim().length <= maxChars) {
+          current = (current + ' ' + word).trim();
+        } else {
+          if (current) lines.push(current);
+          current = word;
+        }
+      });
+      if (current) lines.push(current);
+      
+      return lines;
+    }
+
+    function escapeXml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    // ========================================
+    // UI Updates
+    // ========================================
+    function updateUI() {
+      updateOutline();
+      updatePreview();
+      updateDiagnostics();
+    }
+
+    function updateOutline() {
+      const list = document.getElementById('outline-list');
+      const count = document.getElementById('slide-count');
+
+      if (!pdlData?.slides?.length) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No slides</div></div>';
+        count.textContent = '0 slides';
+        return;
+      }
+
+      count.textContent = `${pdlData.slides.length} slide${pdlData.slides.length > 1 ? 's' : ''}`;
+      
+      list.innerHTML = pdlData.slides.map((slide, i) => {
+        const hasError = issues.some(iss => iss.where.startsWith(`slides[${i}]`) && iss.code.startsWith('PDL-E'));
+        return `
+          <div class="outline-item ${i === currentSlide ? 'active' : ''} ${hasError ? 'error' : ''}" 
+               onclick="goToSlide(${i})">
+            <span class="outline-number">${i + 1}</span>
+            <span class="outline-title">${escapeXml(slide.title || 'Untitled')}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updatePreview() {
+      const container = document.getElementById('preview-container');
+      const indicator = document.getElementById('preview-indicator');
+
+      if (!pdlData?.slides?.length) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📽️</div><div class="empty-state-text">Write PDL to preview slides</div></div>';
+        indicator.textContent = '0 / 0';
+        document.getElementById('prev-btn').disabled = true;
+        document.getElementById('next-btn').disabled = true;
+        return;
+      }
+
+      currentSlide = Math.min(currentSlide, pdlData.slides.length - 1);
+      const svg = renderSlideSVG(pdlData.slides[currentSlide]);
+      container.innerHTML = `<div class="slide-frame">${svg}</div>`;
+      
+      indicator.textContent = `${currentSlide + 1} / ${pdlData.slides.length}`;
+      document.getElementById('prev-btn').disabled = currentSlide === 0;
+      document.getElementById('next-btn').disabled = currentSlide >= pdlData.slides.length - 1;
+    }
+
+    function updateDiagnostics() {
+      const errors = issues.filter(i => i.code.startsWith('PDL-E'));
+      const warnings = issues.filter(i => i.code.startsWith('PDL-W'));
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      const list = document.getElementById('diagnostics-list');
+
+      if (errors.length > 0) {
+        dot.className = 'status-indicator error';
+        text.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''}`;
+      } else if (warnings.length > 0) {
+        dot.className = 'status-indicator warning';
+        text.textContent = `${warnings.length} warning${warnings.length > 1 ? 's' : ''}`;
+      } else {
+        dot.className = 'status-indicator success';
+        text.textContent = pdlData ? 'Valid PDL' : 'Ready';
+      }
+
+      list.innerHTML = issues.map(iss => `
+        <div class="diagnostic-item">
+          <span class="diagnostic-code ${iss.code.startsWith('PDL-E') ? 'error' : 'warning'}">${iss.code}</span>
+          <span class="diagnostic-where">${iss.where}</span>
+          <span class="diagnostic-msg">${iss.message}</span>
+        </div>
+      `).join('');
+
+      // Monaco markers
+      if (monacoEditor && monaco) {
+        const model = monacoEditor.getModel();
+        const markers = issues.map(iss => {
+          const match = iss.where.match(/line (\d+)/);
+          const line = match ? parseInt(match[1]) + 1 : 1;
+          return {
+            severity: iss.code.startsWith('PDL-E') ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+            message: `${iss.code}: ${iss.message}`,
+            startLineNumber: line,
+            startColumn: 1,
+            endLineNumber: line,
+            endColumn: 1000,
+          };
+        });
+        monaco.editor.setModelMarkers(model, 'pdl', markers);
+      }
+    }
+
+    // ========================================
+    // Navigation
+    // ========================================
+    function goToSlide(index) {
+      currentSlide = index;
+      updateOutline();
+      updatePreview();
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) goToSlide(currentSlide - 1);
+    }
+
+    function nextSlide() {
+      if (pdlData && currentSlide < pdlData.slides.length - 1) goToSlide(currentSlide + 1);
+    }
+
+    // ========================================
+    // Image handling
+    // ========================================
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          images[file.name] = e.target.result;
+          renderImageGrid();
+          parsePDL();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderImageGrid() {
+      const grid = document.getElementById('image-grid');
+      grid.innerHTML = Object.entries(images).map(([name, src]) => `
+        <div class="image-item" onclick="copyImageRef('${name}')">
+          <img src="${src}" alt="${name}">
+          <div class="image-item-overlay">
+            <span class="image-item-name">${name}</span>
+          </div>
+          <button class="image-item-delete" onclick="deleteImage(event, '${name}')">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function copyImageRef(name) {
+      navigator.clipboard.writeText(name);
+      alert(`Copied "${name}"\n\nUse in PDL:\nfigure: ${name}`);
+    }
+
+    function deleteImage(e, name) {
+      e.stopPropagation();
+      delete images[name];
+      renderImageGrid();
+      parsePDL();
+    }
+
+    // ========================================
+    // Slideshow
+    // ========================================
+    function startSlideshow() {
+      if (!pdlData?.slides?.length) { alert('No slides'); return; }
+      slideshowIndex = currentSlide;
+      document.getElementById('slideshow-modal').classList.add('active');
+      renderSlideshowSlide();
+      document.addEventListener('keydown', handleSlideshowKey);
+    }
+
+    function closeSlideshow() {
+      document.getElementById('slideshow-modal').classList.remove('active');
+      document.removeEventListener('keydown', handleSlideshowKey);
+    }
+
+    function renderSlideshowSlide() {
+      const frame = document.getElementById('slideshow-frame');
+      frame.innerHTML = renderSlideSVG(pdlData.slides[slideshowIndex]);
+      document.getElementById('slideshow-indicator').textContent = `${slideshowIndex + 1} / ${pdlData.slides.length}`;
+      document.getElementById('slideshow-prev').disabled = slideshowIndex === 0;
+      document.getElementById('slideshow-next').disabled = slideshowIndex >= pdlData.slides.length - 1;
+    }
+
+    function slideshowPrev() { if (slideshowIndex > 0) { slideshowIndex--; renderSlideshowSlide(); } }
+    function slideshowNext() { if (slideshowIndex < pdlData.slides.length - 1) { slideshowIndex++; renderSlideshowSlide(); } }
+    function handleSlideshowKey(e) {
+      if (e.key === 'Escape') closeSlideshow();
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') slideshowPrev();
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') slideshowNext();
+    }
+
+    // ========================================
+    // Export & Sample
+    // ========================================
+    function exportYAML() {
+      const content = monacoEditor ? monacoEditor.getValue() : '';
+      const blob = new Blob([content], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'presentation.pdl.yaml';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadSample() {
+      const sample = `# FrameNote v0.2 Sample
+meta:
+  project: FrameNote Demo
+  author: FrameNote
+  version: "0.2"
+
+slides:
+  - title: Welcome to FrameNote
+    body:
+      text:
+        - Text-first slide authoring
+        - Instant live preview
+        - Structure over decoration
+        - Designed for clarity
+
+  - title: Core Features
+    body:
+      text:
+        - Monaco Editor with syntax highlighting
+        - Real-time PDL validation
+        - SVG-based rendering
+        - Multiple layout styles
+      diagram:
+        boxes:
+          - Write
+          - Validate
+          - Preview
+          - Present
+
+  - title: Layout Styles
+    body:
+      style: split
+      split:
+        direction: horizontal
+        ratio: 0.5
+        a:
+          text:
+            - Text-only slides
+            - Figure with caption
+            - Figure with bullets
+            - Split layouts
+        b:
+          text:
+            - Diagrams (box-arrow)
+            - Vertical/Horizontal split
+            - Customizable ratio
+            - Notes for presenter
+
+  - title: Figure Example
+    body:
+      style: figure_caption
+      figure: https://via.placeholder.com/400x300/3b82f6/ffffff?text=FrameNote
+      caption: Sample figure with caption
+      text:
+        - Images can be uploaded
+        - Referenced by filename
+        - Auto-scaled to fit
+    notes: Presenter notes appear here
+
+  - title: Design Philosophy
+    body:
+      text:
+        - Text is the source of truth
+        - Structure over decoration
+        - Errors should guide, not block
+        - The editor teaches the language
+
+  - title: Get Started
+    body:
+      text: "Start writing your presentation using PDL (Presentation Description Language). The editor provides syntax highlighting, auto-completion, and real-time validation to help you create structured slides efficiently."
+`;
+      if (monacoEditor) {
+        monacoEditor.setValue(sample);
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      if (document.getElementById('slideshow-modal').classList.contains('active')) return;
+      if (e.key === 'ArrowLeft') prevSlide();
+      if (e.key === 'ArrowRight') nextSlide();
+    });
+  </script>
+</body>
+</html>
