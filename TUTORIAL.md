@@ -1,614 +1,683 @@
-# FrameNote Tutorial
+# FrameNote v0.4 Tutorial
 
-A step-by-step guide for beginners to create presentations with FrameNote.
+This tutorial covers everything from basic usage to advanced features of FrameNote.
 
 ## Table of Contents
 
-1. [Getting Started](#1-getting-started)
-2. [Your First Presentation](#2-your-first-presentation)
-3. [Understanding PDL Structure](#3-understanding-pdl-structure)
-4. [Using Templates](#4-using-templates)
-5. [Applying Themes](#5-applying-themes)
-6. [Adding Images](#6-adding-images)
-7. [Creating Diagrams](#7-creating-diagrams)
-8. [Customizing with Format](#8-customizing-with-format)
-9. [Header and Footer](#9-header-and-footer)
-10. [Exporting Your Presentation](#10-exporting-your-presentation)
-11. [Tips and Tricks](#11-tips-and-tricks)
+1. [Introduction](#1-introduction)
+2. [Creating Basic Slides](#2-creating-basic-slides)
+3. [Using Templates](#3-using-templates)
+4. [Tables](#4-tables)
+5. [Code Blocks](#5-code-blocks)
+6. [Math Equations](#6-math-equations)
+7. [Flowcharts](#7-flowcharts)
+8. [Sequence Diagrams](#8-sequence-diagrams)
+9. [Shape Drawing](#9-shape-drawing)
+10. [Themes and Customization](#10-themes-and-customization)
+11. [Exporting](#11-exporting)
 
 ---
 
-## 1. Getting Started
+## 1. Introduction
 
-### Opening FrameNote
+### What is FrameNote?
 
-1. Download `framenote-v0.3.html`
-2. Double-click to open in your browser
-3. You'll see the editor on the left and preview on the right
+FrameNote is a slide creation tool using PDL (Presentation Description Language) in YAML format. Instead of a GUI like PowerPoint, you write presentations declaratively in text.
 
-### Interface Overview
+### Getting Started
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  🅵 FrameNote v0.3    [Theme ▼] [Open][Save][PDF][PPTX] │
-├─────────┬───────────────────────┬───────────────────────┤
-│ Outline │  PDL Editor           │  Preview              │
-│         │                       │                       │
-│ □ Slide1│  meta:                │  ┌─────────────────┐  │
-│ □ Slide2│    project: "..."     │  │                 │  │
-│ □ Slide3│  slides:              │  │   Slide View    │  │
-│         │    - title: "..."     │  │                 │  │
-│         │                       │  └─────────────────┘  │
-├─────────┴───────────────────────┼───────────────────────┤
-│  [Editor] [Images] [Validation] │     ◀  1/3  ▶        │
-└─────────────────────────────────┴───────────────────────┘
-```
+1. Download `framenote.html`
+2. Open in a browser
+3. Write PDL in the left editor
+4. See real-time preview on the right
 
 ---
 
-## 2. Your First Presentation
+## 2. Creating Basic Slides
 
-Let's create a simple 3-slide presentation.
-
-### Step 1: Clear the editor
-
-Delete the sample content and start fresh.
-
-### Step 2: Write the meta section
-
-```yaml
-meta:
-  project: "My First Presentation"
-  author: "Your Name"
-  date: "2025"
-  theme: default
-```
-
-### Step 3: Add the slides section
+### Minimal Structure
 
 ```yaml
 slides:
+  - title: "My First Slide"
 ```
 
-### Step 4: Add a title slide
-
-```yaml
-slides:
-  - template: title
-    title: "Welcome to FrameNote"
-    subtitle: "Creating presentations with text"
-    author: "Your Name"
-    date: "2025"
-```
-
-### Step 5: Add a content slide
-
-```yaml
-  - title: "What is FrameNote?"
-    body:
-      text:
-        - "A text-first presentation tool"
-        - "Write YAML, get beautiful slides"
-        - "No clicking, no dragging"
-```
-
-### Step 6: Add a closing slide
-
-```yaml
-  - template: thanks
-    title: "Thank You!"
-    message: "Questions?"
-    contact: "your.email@example.com"
-```
-
-### Complete Example
+### Adding Metadata
 
 ```yaml
 meta:
-  project: "My First Presentation"
-  author: "Your Name"
-  date: "2025"
+  project: Project Name
+  author: Author Name
+  date: "2025-01-01"
   theme: default
 
 slides:
-  - template: title
-    title: "Welcome to FrameNote"
-    subtitle: "Creating presentations with text"
-    author: "Your Name"
-    date: "2025"
+  - title: "Title"
+```
 
-  - title: "What is FrameNote?"
+### Adding Body Content
+
+```yaml
+slides:
+  - title: "Bullet Points"
     body:
       text:
-        - "A text-first presentation tool"
-        - "Write YAML, get beautiful slides"
-        - "No clicking, no dragging"
+        - First item
+        - Second item
+        - Third item
+```
 
-  - template: thanks
-    title: "Thank You!"
-    message: "Questions?"
-    contact: "your.email@example.com"
+### Paragraph Text
+
+```yaml
+slides:
+  - title: "Description"
+    body:
+      text: "This is paragraph text. You can write longer content here."
 ```
 
 ---
 
-## 3. Understanding PDL Structure
+## 3. Using Templates
 
-### Basic Structure
-
-Every PDL file has two main sections:
-
-```yaml
-meta:      # Presentation settings
-  ...
-
-slides:    # Array of slides
-  - ...    # First slide
-  - ...    # Second slide
-```
-
-### Indentation Rules
-
-PDL uses YAML format. Indentation matters!
-
-```yaml
-# Correct ✓
-meta:
-  project: "Name"    # 2 spaces indent
-
-# Wrong ✗
-meta:
-project: "Name"      # No indent
-```
-
-### Slide Types
-
-**Standard Slide:**
-```yaml
-- title: "Slide Title"
-  body:
-    text:
-      - "Point 1"
-      - "Point 2"
-```
-
-**Template Slide:**
-```yaml
-- template: quote
-  quote: "Text here"
-  author: "Author"
-```
-
----
-
-## 4. Using Templates
-
-### Title Template
-
-Perfect for opening slides.
+### title (Title Slide)
 
 ```yaml
 - template: title
-  title: "Main Title"
+  title: "Presentation Title"
   subtitle: "Subtitle"
-  author: "Author Name"
+  author: "Presenter Name"
   date: "2025"
 ```
 
-### Section Template
-
-Use to divide your presentation into parts.
+### section (Section Divider)
 
 ```yaml
 - template: section
-  title: "Part 1"
+  title: "Chapter 1"
   subtitle: "Introduction"
 ```
 
-### Quote Template
-
-Display memorable quotes.
+### quote (Quotation)
 
 ```yaml
 - template: quote
-  quote: "The only way to do great work is to love what you do."
-  author: "Steve Jobs"
-  source: "Stanford Commencement Speech, 2005"
+  quote: "Simplicity is the ultimate sophistication"
+  author: "Leonardo da Vinci"
 ```
 
-### Agenda Template
-
-Show your presentation outline.
+### agenda (Table of Contents)
 
 ```yaml
 - template: agenda
   title: "Today's Agenda"
   items:
-    - "Introduction"
-    - "Main Topic"
-    - "Demo"
-    - "Q&A"
+    - Introduction
+    - Main Topic
+    - Summary
 ```
 
-### Comparison Template
-
-Compare two things side by side.
+### comparison (Side-by-Side)
 
 ```yaml
 - template: comparison
-  title: "Old vs New"
+  title: "Feature Comparison"
   left:
-    label: "Before"
+    title: "Plan A"
     items:
-      - "Manual process"
-      - "Time consuming"
-      - "Error prone"
+      - Feature 1
+      - Feature 2
   right:
-    label: "After"
+    title: "Plan B"
     items:
-      - "Automated"
-      - "Fast"
-      - "Reliable"
+      - Feature 3
+      - Feature 4
 ```
 
-### Timeline Template
-
-Show chronological events.
+### timeline (Timeline)
 
 ```yaml
 - template: timeline
-  title: "Project Timeline"
+  title: "Development Roadmap"
   events:
-    - date: "Q1"
-      title: "Planning"
-    - date: "Q2"
-      title: "Development"
-    - date: "Q3"
-      title: "Testing"
-    - date: "Q4"
-      title: "Launch"
+    - date: "2024 Q1"
+      title: "Planning Phase"
+    - date: "2024 Q2"
+      title: "Development Phase"
 ```
 
-### Q&A Template
-
-End with questions.
+### qa (Q&A)
 
 ```yaml
 - template: qa
-  title: "Questions?"
-  contact: "email@example.com"
+  title: "Any Questions?"
+  contact: "example@email.com"
 ```
 
-### Thanks Template
-
-Close your presentation.
+### thanks (Closing)
 
 ```yaml
 - template: thanks
-  title: "Thank You!"
-  message: "For more information"
+  title: "Thank You"
+  message: "Thank you for your attention"
   contact: "https://example.com"
 ```
 
 ---
 
-## 5. Applying Themes
+## 4. Tables
 
-### Using the UI Selector
+### Basic Table
 
-Click the Theme dropdown in the header and select a theme.
-
-### Using meta.theme
-
-```yaml
-meta:
-  theme: dark    # Options: default, corporate, minimal, dark,
-                 #          nature, sunset, ocean, lavender,
-                 #          rose, midnight
-```
-
-### Theme Showcase
-
-| Theme | Best For |
-|-------|----------|
-| `default` | General purpose |
-| `corporate` | Business presentations |
-| `minimal` | Clean, text-focused |
-| `dark` | Tech talks, demos |
-| `nature` | Environmental topics |
-| `sunset` | Warm, friendly tone |
-| `ocean` | Professional, calm |
-| `lavender` | Creative, modern |
-| `rose` | Marketing, lifestyle |
-| `midnight` | Premium, dramatic |
-
----
-
-## 6. Adding Images
-
-### Step 1: Upload Images
-
-1. Click the "Images" tab below the editor
-2. Drag and drop image files, or click to select
-3. Images are stored in your project
-
-### Step 2: Reference in PDL
-
-**Figure with Caption:**
-```yaml
-- title: "Our Product"
-  body:
-    style: figure_caption
-    figure: product-photo.png
-    caption: "The new design"
-```
-
-**Image in Split Layout:**
 ```yaml
 - title: "Features"
   body:
-    style: split
-    direction: horizontal
-    ratio: "1:1"
-    left:
-      figure: screenshot.png
-    right:
-      text:
-        - "Feature 1"
-        - "Feature 2"
+    table: |
+      | Feature | Description |
+      |---------|-------------|
+      | Tables  | Markdown format |
+      | Code    | Highlighting |
+```
+
+### Column Alignment
+
+```yaml
+table: |
+  | Left   | Center | Right |
+  |:-------|:------:|------:|
+  | Left   | Center | Right |
+  | Text   | Text   | 123   |
+```
+
+- `:---` Left align
+- `:---:` Center align
+- `---:` Right align
+
+### Custom Styling
+
+```yaml
+tableStyle:
+  colWidths: [300, 150]    # Column widths (px)
+  rowHeight: 60            # Row height (px)
+  headerBg: "#3b82f6"      # Header background
+  headerColor: "#ffffff"   # Header text color
+  striped: true            # Striped rows
+  border: true             # Show borders
+  fontSize: 20             # Font size
 ```
 
 ---
 
-## 7. Creating Diagrams
+## 5. Code Blocks
 
-### Box-Arrow Diagram
+### Basic Syntax
 
 ```yaml
-- title: "Process Flow"
+- title: "Python Code"
   body:
-    diagram:
-      type: box-arrow
-      direction: horizontal
-      boxes:
-        - "Input"
-        - "Process"
-        - "Output"
+    code:
+      language: python
+      content: |
+        def greet(name):
+            return f"Hello, {name}!"
+        
+        print(greet("World"))
 ```
 
-### Vertical Diagram
+### Supported Languages
+
+javascript, python, java, rust, go, yaml, sql, html, css, bash
+
+### Theme Settings
 
 ```yaml
-- title: "Hierarchy"
-  body:
-    diagram:
-      type: box-arrow
-      direction: vertical
-      boxes:
-        - "CEO"
-        - "Manager"
-        - "Team"
+code:
+  language: javascript
+  content: |
+    console.log("Hello");
+  style:
+    theme: dark  # dark, light, match
+```
+
+- `dark` - Dark background (default)
+- `light` - Light background
+- `match` - Colors matching slide theme
+
+### Options
+
+```yaml
+code:
+  language: python
+  content: |
+    print("Hello")
+  lineNumbers: true    # Show line numbers (default: true)
+  fontSize: 18         # Font size (default: 20)
 ```
 
 ---
 
-## 8. Customizing with Format
+## 6. Math Equations
 
-### Global Format
+### Inline Math
 
-Apply to all slides:
+Embed math in text using `$...$`:
+
+```yaml
+text:
+  - "Einstein's equation: $E = mc^2$"
+  - "Pythagorean theorem: $a^2 + b^2 = c^2$"
+```
+
+### Block Math
+
+```yaml
+math: "E = mc^2"
+```
+
+### Multiple Equations
+
+```yaml
+math:
+  - "E = mc^2"
+  - "F = ma"
+  - "p = mv"
+mathStyle:
+  fontSize: 42
+  align: center
+```
+
+### LaTeX Syntax Examples
+
+| Syntax | Output | Description |
+|--------|--------|-------------|
+| `x^2` | x² | Superscript |
+| `x_i` | xᵢ | Subscript |
+| `\frac{a}{b}` | a/b | Fraction |
+| `\sqrt{x}` | √x | Square root |
+| `\sum_{i=1}^{n}` | Σ | Summation |
+| `\int_{a}^{b}` | ∫ | Integral |
+| `\alpha, \beta, \pi` | α, β, π | Greek letters |
+| `\pm` | ± | Plus-minus |
+| `\times` | × | Multiplication |
+| `\rightarrow` | → | Arrow |
+
+### Complex Examples
+
+```yaml
+# Quadratic formula
+math: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+
+# Matrix
+math: |
+  A = \begin{pmatrix}
+  a & b \\
+  c & d
+  \end{pmatrix}
+```
+
+**Note:** Use double backslashes (`\\`) inside double quotes in YAML. Use pipe (`|`) or single quotes to avoid escaping.
+
+---
+
+## 7. Flowcharts
+
+### Basic Syntax
+
+```yaml
+flowchart: |
+  direction: LR
+  A[Start] --> B(Process)
+  B --> C{Decision}
+  C -->|Yes| D[End]
+  C -->|No| B
+```
+
+### Node Shapes
+
+| Syntax | Shape |
+|--------|-------|
+| `[text]` | Rectangle |
+| `(text)` | Rounded rectangle |
+| `{text}` | Diamond (decision) |
+| `((text))` | Circle |
+| `[[text]]` | Stadium |
+
+### Arrow Types
+
+| Syntax | Description |
+|--------|-------------|
+| `-->` | Arrow |
+| `-->｜label｜` | Labeled arrow |
+| `-.->` | Dashed arrow |
+| `===>` | Thick arrow |
+| `---` | Line (no arrow) |
+
+### Direction
+
+```yaml
+flowchart: |
+  direction: TB    # TB, BT, LR, RL
+  A[Top] --> B[Bottom]
+```
+
+- `LR` - Left to Right (default)
+- `RL` - Right to Left
+- `TB` - Top to Bottom
+- `BT` - Bottom to Top
+
+### Sizing Options
+
+```yaml
+flowchart:
+  content: |
+    direction: LR
+    A[Start] --> B[End]
+  style:
+    nodeWidth: 180      # Node width
+    nodeHeight: 80      # Node height
+    fontSize: 22        # Font size
+    gapX: 100           # Horizontal gap
+    gapY: 100           # Vertical gap
+    x: 150              # Start X position
+    y: 200              # Start Y position
+```
+
+### Complex Example
+
+```yaml
+flowchart: |
+  direction: TB
+  Start[Start] --> Input(Input)
+  Input --> Validate{Validate}
+  Validate -->|OK| Process[Process]
+  Validate -->|NG| Error[Error]
+  Error --> Input
+  Process --> Save((Save))
+  Save --> End[End]
+```
+
+---
+
+## 8. Sequence Diagrams
+
+### Basic Syntax
+
+```yaml
+sequence: |
+  Client ->> Server: HTTP Request
+  Server ->> DB: Query
+  DB -->> Server: Result
+  Server -->> Client: Response
+```
+
+### Arrow Types
+
+| Syntax | Description |
+|--------|-------------|
+| `->>` | Async message |
+| `-->>` | Reply (dashed) |
+| `->` | Sync message |
+| `-->` | Dashed line |
+| `-x` | Failed/crossed |
+
+### Explicit Participants
+
+```yaml
+sequence: |
+  participant User
+  participant Frontend
+  participant Backend
+  User ->> Frontend: Click
+  Frontend ->> Backend: API Call
+  Backend -->> Frontend: Response
+  Frontend -->> User: Display
+```
+
+### Sizing Options
+
+```yaml
+sequence:
+  content: |
+    A ->> B: Message
+    B -->> A: Reply
+  style:
+    participantWidth: 150     # Participant box width
+    participantHeight: 60     # Participant box height
+    messageGap: 80            # Message spacing
+    fontSize: 20              # Font size
+    marginX: 100              # Horizontal margin
+    y: 180                    # Start Y position
+```
+
+---
+
+## 9. Shape Drawing
+
+### Basic Syntax
+
+```yaml
+shapes:
+  - type: rect
+    x: 200
+    y: 300
+    width: 150
+    height: 80
+    fill: "#3b82f6"
+    label: "Box"
+```
+
+### Shape Types
+
+| Type | Required Properties | Description |
+|------|---------------------|-------------|
+| `rect` | x, y, width, height | Rectangle |
+| `circle` | x, y, r | Circle |
+| `ellipse` | x, y, rx, ry | Ellipse |
+| `line` | x, y, x2, y2 | Line |
+| `arrow` | x, y, x2, y2 | Arrow |
+| `diamond` | x, y, size | Diamond |
+| `triangle` | x, y, width, height | Triangle |
+| `polygon` | points | Polygon |
+| `polyline` | points | Polyline |
+| `path` | d | SVG path |
+| `text` | x, y, label | Text |
+
+### Common Options
+
+```yaml
+shapes:
+  - type: rect
+    x: 200
+    y: 300
+    width: 150
+    height: 80
+    fill: "#3b82f6"        # Fill color
+    stroke: "#1e40af"      # Stroke color
+    strokeWidth: 2         # Stroke width
+    opacity: 0.8           # Opacity (0-1)
+    rx: 10                 # Corner radius
+    label: "Label"         # Label text
+    labelColor: "#ffffff"  # Label color
+    labelSize: 20          # Label font size
+```
+
+### Combined Example
+
+```yaml
+shapes:
+  # Input box
+  - type: rect
+    x: 200
+    y: 300
+    width: 150
+    height: 80
+    fill: "#3b82f6"
+    rx: 8
+    label: "Input"
+  
+  # Arrow
+  - type: arrow
+    x: 370
+    y: 340
+    x2: 470
+    y2: 340
+    strokeWidth: 3
+  
+  # Process (circle)
+  - type: circle
+    x: 550
+    y: 340
+    r: 60
+    fill: "#10b981"
+    label: "Process"
+  
+  # Decision (diamond)
+  - type: diamond
+    x: 750
+    y: 340
+    size: 120
+    fill: "#f59e0b"
+    label: "Decision"
+```
+
+---
+
+## 10. Themes and Customization
+
+### Theme Setting
 
 ```yaml
 meta:
-  format:
-    background:
-      color: "#f0f9ff"
-    accent:
-      color: "#0284c7"
-    title:
-      color: "#0c4a6e"
-      size: 52
-      weight: "700"
-    text:
-      color: "#334155"
+  theme: default
+```
+
+### Available Themes
+
+| Theme | Background | Accent | Style |
+|-------|------------|--------|-------|
+| default | White | Indigo | Standard |
+| corporate | White | Blue | Business |
+| minimal | Gray | Slate | Simple |
+| dark | Dark | Cyan | Dark |
+| nature | Green tint | Green | Natural |
+| sunset | Orange tint | Orange | Warm |
+| ocean | Blue tint | Sky | Fresh |
+| lavender | Purple tint | Purple | Calm |
+| rose | Pink tint | Rose | Elegant |
+| midnight | Navy | Violet | Night |
+
+### Header/Footer
+
+```yaml
+meta:
+  header:
+    show: true
+    text: "{project}"
+    format:
+      color: "#666666"
       size: 28
-    bullet:
-      color: "#06b6d4"
-```
-
-### Per-Slide Override
-
-Override for specific slides:
-
-```yaml
-- title: "Alert!"
-  format:
-    background:
-      color: "#fef2f2"
-    title:
-      color: "#dc2626"
-  body:
-    text:
-      - "This is important"
-```
-
-### Format Priority
-
-1. Slide format (highest)
-2. Meta format
-3. Theme colors
-4. Default values (lowest)
-
----
-
-## 9. Header and Footer
-
-### Basic Setup
-
-```yaml
-meta:
-  header:
-    show: true
-    text: "{project}"
   footer:
     show: true
     left: "{author}"
-    center: "{date}"
+    center: ""
     right: "{page} / {total}"
 ```
 
-### Available Placeholders
-
-| Placeholder | Output |
-|-------------|--------|
-| `{project}` | Project name from meta |
-| `{author}` | Author name from meta |
-| `{date}` | Date from meta |
-| `{page}` | Current slide number |
-| `{total}` | Total number of slides |
-
-### Styling Header/Footer
-
-```yaml
-meta:
-  header:
-    show: true
-    text: "{project}"
-    format:
-      color: "#64748b"
-      size: 20
-      background: "#f1f5f9"
-  footer:
-    show: true
-    left: "{author}"
-    right: "{page} / {total}"
-    format:
-      color: "#94a3b8"
-      size: 18
-```
+**Placeholders:**
+- `{project}` - Project name
+- `{author}` - Author name
+- `{date}` - Date
+- `{page}` - Current page
+- `{total}` - Total pages
 
 ---
 
-## 10. Exporting Your Presentation
+## 11. Exporting
 
 ### PDF Export
 
-1. Click the "PDF" button
-2. Wait for generation
-3. File downloads automatically
+Click "Export" → "PDF"
 
-Best for: Printing, email attachments
+### PowerPoint (PPTX) Export
 
-### PPTX Export
+Click "Export" → "PPTX"
 
-1. Click the "PPTX" button
-2. Wait for generation
-3. File downloads automatically
-
-Best for: Editing in PowerPoint, sharing with colleagues
+**Note:** Some features (like KaTeX math rendering) have limitations in PPTX format.
 
 ### HTML Export
 
-1. Click the "HTML" button
-2. Wait for generation
-3. File downloads automatically
+Click "Export" → "HTML"
 
-Best for: Web hosting, offline viewing
+Creates a self-contained slideshow HTML file with arrow key navigation.
 
-### Saving Your Project
+### Project File (.fnote)
 
-1. Click "Save" button
-2. Downloads as `.fnote` file
-3. Contains all content and images
+- "Save" button to save project
+- "Load" button to open project
 
----
-
-## 11. Tips and Tricks
-
-### Using Code Completion
-
-Press `Ctrl+Space` to open suggestions:
-
-- After `- ` for slide snippets
-- In meta section for settings
-- Anywhere for keywords
-
-### Quick Slide Navigation
-
-- Click slides in the Outline panel
-- Use `◀` `▶` buttons below preview
-
-### Presentation Mode
-
-- Click "Present" or press `F11`
-- Use arrow keys to navigate
-- Press `Esc` to exit
-
-### YAML Tips
-
-**Multiline Text:**
-```yaml
-- title: "Long Title"
-  body:
-    text:
-      - "This is a very long bullet point that
-         continues on the next line"
-```
-
-**Special Characters:**
-```yaml
-- title: "Using Quotes"
-  body:
-    text:
-      - "Use double quotes for: colons, special chars"
-      - 'Or single quotes work too'
-```
-
-### Common Mistakes
-
-❌ **Wrong indentation:**
-```yaml
-meta:
-project: "Name"  # Should be indented!
-```
-
-✓ **Correct:**
-```yaml
-meta:
-  project: "Name"
-```
-
-❌ **Missing dash for slides:**
-```yaml
-slides:
-  title: "Slide"  # Missing dash!
-```
-
-✓ **Correct:**
-```yaml
-slides:
-  - title: "Slide"
-```
-
-❌ **Wrong quotes:**
-```yaml
-title: Project "Name"  # Needs outer quotes!
-```
-
-✓ **Correct:**
-```yaml
-title: "Project \"Name\""
-# or
-title: 'Project "Name"'
-```
+The .fnote file is a ZIP archive containing YAML source and images.
 
 ---
 
-## What's Next?
+## Tips
 
-- Try different templates
-- Experiment with themes
-- Create your own color schemes with format
-- Share your presentations!
+### Code Completion
 
-Happy presenting! 🎉
+- `Ctrl+Space` to show suggestions
+- `📑` snippets for templates
+- Keywords auto-complete with `:`
+
+### Adding Images
+
+Drag and drop images onto the editor area
+
+```yaml
+- title: "Slide with Image"
+  body:
+    figure: "image.png"
+    caption: "Image caption"
+    style: figure_caption
+```
+
+### Slideshow Mode
+
+Click "Play" button for fullscreen presentation
+
+- Arrow keys to navigate
+- `Esc` to exit
+
+---
+
+## Troubleshooting
+
+### "No slides" displayed
+
+- Check YAML syntax errors
+- Verify proper indentation (2 spaces recommended)
+- Ensure `slides:` key exists
+
+### Math not rendering
+
+- Check backslash escaping (use `\\` in double quotes)
+- Use single quotes or pipe (`|`) to avoid escaping
+
+### Flowchart not displaying correctly
+
+- Don't include spaces in node IDs
+- Add spaces around arrows
+- Put `direction:` on the first line
+
+---
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate slides |
+| `Ctrl+S` | Save project |
+| `Ctrl+Space` | Code completion |
+| `F11` | Fullscreen |
+
+---
+
+This concludes the FrameNote v0.4 tutorial. For more details, see the README documentation.

@@ -1,216 +1,260 @@
-# FrameNote v0.3
+# FrameNote v0.4
 
-**Text-first slide authoring tool using PDL (Presentation Description Language)**
+**Text-First Slide Authoring Tool**
 
-FrameNote is a browser-based presentation tool that treats slides as declarative YAML documents. Focus on your content structure, not visual design — FrameNote handles the layout automatically.
+FrameNote is a declarative slide presentation tool using PDL (Presentation Description Language) in YAML format. Focus on content structure, not visual design.
 
-![FrameNote](https://img.shields.io/badge/version-0.3-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+## Features
 
-## ✨ Features
+### Core
+- **PDL (YAML-based)** - Declarative presentation authoring
+- **Single HTML file** - No installation required, runs in modern browsers
+- **Monaco Editor** - Syntax highlighting, code completion, snippets
+- **Real-time preview** - Instant visual feedback
+- **10 Themes** - default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
 
-### 🎯 Core Philosophy
-- **Structure over decoration** — Write content, not design
-- **Text-first authoring** — Full keyboard control with code editor
-- **Zero setup** — Single HTML file, runs in any modern browser
+### Templates (8 types)
+- `title` - Title slide with subtitle, author, date
+- `section` - Section divider
+- `quote` - Quotation with author
+- `qa` - Q&A slide
+- `thanks` - Thank you slide
+- `agenda` - Agenda/TOC
+- `comparison` - Side-by-side comparison
+- `timeline` - Timeline events
 
-### 📝 PDL (Presentation Description Language)
-- YAML-based declarative format
-- Human-readable and version-control friendly
-- Separation of content and presentation
+### Content Elements
+- **Text** - Paragraphs, bullet points, inline math (`$E=mc^2$`)
+- **Tables** - Markdown format with alignment (`:---`, `:---:`, `---:`)
+- **Code Blocks** - Syntax highlighting for 10+ languages
+- **Math** - KaTeX LaTeX rendering (inline & block)
+- **Shapes** - SVG primitives (rect, circle, arrow, diamond, etc.)
+- **Flowcharts** - Mermaid-style diagrams
+- **Sequence Diagrams** - UML sequence diagrams
+- **Images** - Drag & drop upload
 
-### 🎨 Templates (8 types)
-| Template | Description |
-|----------|-------------|
-| `title` | Opening slide with title, subtitle, author, date |
-| `section` | Section divider |
-| `quote` | Quotation with author and source |
-| `qa` | Q&A / Questions slide |
-| `thanks` | Closing / Thank you slide |
-| `agenda` | Agenda / Table of contents |
-| `comparison` | Side-by-side comparison |
-| `timeline` | Timeline with events |
+### Export
+- **PDF** - Print-ready document
+- **PPTX** - PowerPoint format
+- **HTML** - Self-contained presentation
+- **.fnote** - Project file (save/load)
 
-### 🎭 Themes (10 presets)
-`default` · `corporate` · `minimal` · `dark` · `nature` · `sunset` · `ocean` · `lavender` · `rose` · `midnight`
+## Quick Start
 
-### 📤 Export Formats
-- **PDF** — Print-ready document
-- **PPTX** — Microsoft PowerPoint (native shapes)
-- **HTML** — Standalone slideshow
-
-### ⚡ Editor Features
-- Monaco Editor (VS Code engine)
-- PDL syntax highlighting
-- Context-aware code completion (Ctrl+Space)
-- Real-time preview
-- YAML validation with error markers
-
-## 🚀 Quick Start
-
-1. Download `framenote-v0.3.html`
+1. Download `framenote.html`
 2. Open in a modern browser (Chrome, Firefox, Edge, Safari)
-3. Start writing!
+3. Start writing PDL in the editor
+
+## PDL Syntax
+
+### Basic Structure
 
 ```yaml
 meta:
-  project: "My First Presentation"
-  author: "Your Name"
+  project: My Presentation
+  author: Your Name
   theme: default
 
 slides:
   - template: title
-    title: "Hello FrameNote"
-    subtitle: "My first presentation"
-    author: "Your Name"
-    date: "2025"
+    title: "Welcome"
+    subtitle: "Getting Started with FrameNote"
 
-  - title: "Introduction"
+  - title: "Agenda"
     body:
       text:
-        - "FrameNote makes presentations easy"
-        - "Just write YAML, get beautiful slides"
-        - "Export to PDF, PPTX, or HTML"
+        - First topic
+        - Second topic
+        - Third topic
 ```
 
-## 📖 Documentation
-
-- [Tutorial (English)](TUTORIAL.md)
-- [チュートリアル (日本語)](TUTORIAL-JP.md)
-- [README 日本語版](README-JP.md)
-
-## 🎮 Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Space` | Open code completion |
-| `Tab` | Accept completion / Expand snippet |
-| `Ctrl+S` | Save project (.fnote) |
-| `F11` or click "Present" | Start slideshow |
-| `Esc` | Exit slideshow |
-| `←` / `→` | Navigate slides |
-
-## 📁 File Formats
-
-### .fnote (Project File)
-ZIP archive containing:
-```
-project.fnote
-├── manifest.json      # Project metadata
-├── presentation.pdl.yaml  # PDL content
-└── images/            # Uploaded images
-    └── *.png, *.jpg
-```
-
-### .pdl.yaml (PDL File)
-Plain YAML file with PDL structure.
-
-## 🔧 PDL Structure
+### Tables
 
 ```yaml
-meta:
-  project: "Project Name"
-  author: "Author"
-  date: "2025-01-01"
-  version: "1.0"
-  theme: default
-  header:
-    show: true
-    text: "{project}"
-  footer:
-    show: true
-    left: "{author}"
-    right: "{page} / {total}"
-
-slides:
-  - title: "Slide Title"
-    body:
-      text:
-        - "Bullet point 1"
-        - "Bullet point 2"
+- title: Feature Comparison
+  body:
+    table: |
+      | Feature | Status |
+      |:--------|:------:|
+      | Tables  | ✅     |
+      | Code    | ✅     |
+      | Math    | ✅     |
+    tableStyle:
+      colWidths: [300, 100]
+      rowHeight: 50
 ```
 
-## 🎨 Customization
+### Code Blocks
 
-### Global Format (in meta)
 ```yaml
-meta:
-  format:
-    accent:
-      color: "#6366f1"
-    title:
-      color: "#1e1b4b"
-      size: 48
+- title: Code Example
+  body:
+    code:
+      language: python
+      content: |
+        def hello():
+            print("Hello, World!")
+      style:
+        theme: dark  # dark, light, or match
+```
+
+### Math Equations
+
+```yaml
+# Inline math in text
+- title: Physics
+  body:
     text:
-      color: "#334155"
-      size: 28
-    bullet:
-      color: "#6366f1"
-```
+      - "Einstein's equation: $E = mc^2$"
 
-### Per-Slide Format Override
-```yaml
-slides:
-  - title: "Important Slide"
-    format:
-      background:
-        color: "#dc2626"
-      title:
-        color: "#ffffff"
-    body:
-      text:
-        - "This slide has custom colors"
-```
-
-## 🖼️ Images
-
-1. Drag & drop images to the Images tab
-2. Reference in PDL:
-
-```yaml
-- title: "Slide with Image"
+# Block math
+- title: Quadratic Formula
   body:
-    style: figure_caption
-    figure: my-image.png
-    caption: "Image caption"
+    math:
+      - "x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}"
+    mathStyle:
+      fontSize: 48
+      align: center
 ```
 
-## 📊 Diagrams
+### Flowcharts
 
 ```yaml
-- title: "Process Flow"
+- title: Process Flow
   body:
-    diagram:
-      type: box-arrow
-      direction: horizontal
-      boxes:
-        - "Step 1"
-        - "Step 2"
-        - "Step 3"
+    flowchart: |
+      direction: LR
+      A[Start] --> B(Process)
+      B --> C{Decision}
+      C -->|Yes| D[End]
+      C -->|No| B
 ```
 
-## 🔄 Placeholders
+**Node shapes:**
+- `[text]` - Rectangle
+- `(text)` - Rounded rectangle
+- `{text}` - Diamond
+- `((text))` - Circle
 
-Use in header/footer:
-- `{project}` — Project name
-- `{author}` — Author name
-- `{date}` — Date
-- `{page}` — Current page number
-- `{total}` — Total pages
+**Arrows:**
+- `-->` - Arrow
+- `-->|label|` - Labeled arrow
+- `-.->` - Dashed arrow
+- `---` - Line (no arrow)
 
-## 📋 Requirements
+**Directions:** `LR`, `RL`, `TB`, `BT`
 
-- Modern web browser with JavaScript enabled
-- No server required
-- No installation needed
+### Sequence Diagrams
 
-## 📄 License
+```yaml
+- title: API Flow
+  body:
+    sequence: |
+      Client ->> Server: Request
+      Server ->> DB: Query
+      DB -->> Server: Result
+      Server -->> Client: Response
+```
+
+**Arrow types:**
+- `->>` - Async message
+- `-->>` - Reply (dashed)
+- `->` - Sync message
+- `-x` - Failed/crossed
+
+### Shapes
+
+```yaml
+- title: Diagram
+  body:
+    shapes:
+      - type: rect
+        x: 200
+        y: 300
+        width: 150
+        height: 80
+        fill: "#3b82f6"
+        label: "Box"
+      - type: arrow
+        x: 370
+        y: 340
+        x2: 500
+        y2: 340
+```
+
+**Shape types:** rect, circle, ellipse, line, arrow, diamond, triangle, polygon, polyline, path, text
+
+## Themes
+
+| Theme | Background | Accent |
+|-------|------------|--------|
+| default | White | Indigo |
+| corporate | White | Blue |
+| minimal | Gray | Slate |
+| dark | Dark | Cyan |
+| nature | Green tint | Green |
+| sunset | Orange tint | Orange |
+| ocean | Blue tint | Sky |
+| lavender | Purple tint | Purple |
+| rose | Pink tint | Rose |
+| midnight | Navy | Violet |
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate slides |
+| `Ctrl+S` | Save project |
+| `F11` | Fullscreen |
+
+## Browser Support
+
+- Chrome 90+
+- Firefox 90+
+- Edge 90+
+- Safari 15+
+
+## Dependencies (via CDN)
+
+- Monaco Editor - Code editing
+- js-yaml - YAML parsing
+- jsPDF - PDF export
+- PptxGenJS - PowerPoint export
+- JSZip - Project files
+- KaTeX - Math rendering
+
+## License
 
 MIT License
 
-## 🤝 Contributing
+## Changelog
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+### v0.4 (Current)
+- Table column alignment (left/center/right)
+- Auto column width calculation
+- Custom tableStyle (colWidths, rowHeight)
+- Code blocks with syntax highlighting
+- Code themes (dark/light/match)
+- Math equations (KaTeX) - inline & block
+- Multiple math formulas support
+- SVG shapes drawing
+- Mermaid-style flowcharts
+- Sequence diagrams
+- Flowchart/Sequence sizing options
 
----
+### v0.3
+- 8 slide templates
+- 10 preset themes
+- PDF/PPTX/HTML export
+- Monaco Editor integration
+- Image management
+- Header/Footer system
 
-Made with ❤️ for presentation creators who prefer text over clicks.
+### v0.2
+- Basic PDL specification
+- Theme system
+- Slide navigation
+
+### v0.1
+- Initial release
+- YAML-based slides

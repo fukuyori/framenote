@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrameNote v0.3 - Text-First Slide Tool</title>
+  <title>FrameNote v0.4 - Text-First Slide Tool</title>
   <!-- Load all libraries BEFORE Monaco's AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <!-- Monaco loader MUST be loaded last to avoid AMD conflicts -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1080,6 +1083,48 @@
             detail: 'Diagram block'
           };
           
+          // Table snippet
+          const tableSnippet = {
+            label: '📋 table',
+            insertText: 'table: |\n      | ${1:Header 1} | ${2:Header 2} | ${3:Header 3} |\n      |:------------|:------------:|-------------:|\n      | ${4:Left} | ${5:Center} | ${6:Right} |\n      | ${7:Cell} | ${8:Cell} | ${9:Cell} |\n    tableStyle:\n      colWidths: [200, 250, 150]\n      rowHeight: 52',
+            detail: 'Markdown table (with style)'
+          };
+          
+          // Code snippet
+          const codeSnippet = {
+            label: '💻 code',
+            insertText: 'code:\n      language: ${1|javascript,python,java,rust,go,yaml,sql|}\n      content: |\n        ${2:// Your code here}\n        ${3:console.log("Hello");}\n      style:\n        theme: ${4|dark,light,match|}',
+            detail: 'Code block with syntax highlighting'
+          };
+          
+          // Math snippet
+          const mathSnippet = {
+            label: '🔢 math',
+            insertText: 'math:\n      - "${1:E = mc^2}"\n      - "${2:F = ma}"\n    mathStyle:\n      fontSize: ${3:42}\n      align: ${4|center,left,right|}',
+            detail: 'Math equations (LaTeX/KaTeX)'
+          };
+          
+          // Shapes snippet
+          const shapesSnippet = {
+            label: '🔷 shapes',
+            insertText: 'shapes:\n      - type: ${1|rect,circle,ellipse,line,arrow,diamond,triangle,polygon|}\n        x: ${2:400}\n        y: ${3:300}\n        ${4:width: 200}\n        ${5:height: 100}\n        fill: "${6:#6366f1}"\n        label: "${7:Label}"',
+            detail: 'SVG shapes drawing'
+          };
+          
+          // Flowchart snippet
+          const flowchartSnippet = {
+            label: '📊 flowchart',
+            insertText: 'flowchart: |\n      direction: ${1|LR,TB,RL,BT|}\n      ${2:A}[${3:Start}] --> ${4:B}(${5:Process})\n      ${4:B} --> ${6:C}{${7:Decision}}\n      ${6:C} -->|${8:Yes}| ${9:D}[${10:End}]\n      ${6:C} -->|${11:No}| ${4:B}',
+            detail: 'Mermaid-style flowchart'
+          };
+          
+          // Sequence diagram snippet
+          const sequenceSnippet = {
+            label: '🔄 sequence',
+            insertText: 'sequence: |\n      ${1:Client} ->> ${2:Server}: ${3:Request}\n      ${2:Server} -->> ${1:Client}: ${4:Response}',
+            detail: 'Sequence diagram'
+          };
+          
           // Add snippets based on context
           if (context === 'new-slide') {
             slideSnippets.forEach(s => {
@@ -1131,6 +1176,60 @@
               sortText: '0',
               range: range
             });
+            suggestions.push({
+              label: tableSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: tableSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: tableSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+            suggestions.push({
+              label: codeSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: codeSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: codeSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+            suggestions.push({
+              label: mathSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: mathSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: mathSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+            suggestions.push({
+              label: shapesSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: shapesSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: shapesSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+            suggestions.push({
+              label: flowchartSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: flowchartSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: flowchartSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+            suggestions.push({
+              label: sequenceSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: sequenceSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: sequenceSnippet.detail,
+              sortText: '0',
+              range: range
+            });
           }
           
           // Keywords with colon (YAML keys) - always available
@@ -1153,6 +1252,54 @@
             { label: 'figure:', detail: 'Image filename' },
             { label: 'caption:', detail: 'Figure caption' },
             { label: 'diagram:', detail: 'Diagram block' },
+            { label: 'table:', detail: 'Markdown table' },
+            { label: 'tableStyle:', detail: 'Table style options' },
+            { label: 'code:', detail: 'Code block' },
+            { label: 'language:', detail: 'Code language' },
+            { label: 'content:', detail: 'Code content' },
+            { label: 'lineNumbers:', detail: 'Show line numbers' },
+            { label: 'style:', detail: 'Code style options' },
+            { label: 'theme:', detail: 'Code theme (dark/light)' },
+            { label: 'background:', detail: 'Background color' },
+            { label: 'math:', detail: 'Math equation (LaTeX)' },
+            { label: 'mathStyle:', detail: 'Math style options' },
+            { label: 'formula:', detail: 'Math formula' },
+            { label: 'align:', detail: 'Alignment' },
+            { label: 'lineSpacing:', detail: 'Line spacing for multiple equations' },
+            { label: 'shapes:', detail: 'SVG shapes array' },
+            { label: 'flowchart:', detail: 'Mermaid-style flowchart' },
+            { label: 'sequence:', detail: 'Sequence diagram' },
+            { label: 'content:', detail: 'Chart content' },
+            { label: 'chart:', detail: 'Chart content (alias)' },
+            { label: 'nodeWidth:', detail: 'Flowchart node width' },
+            { label: 'nodeHeight:', detail: 'Flowchart node height' },
+            { label: 'gapX:', detail: 'Horizontal gap' },
+            { label: 'gapY:', detail: 'Vertical gap' },
+            { label: 'participantWidth:', detail: 'Sequence participant width' },
+            { label: 'participantHeight:', detail: 'Sequence participant height' },
+            { label: 'messageGap:', detail: 'Sequence message gap' },
+            { label: 'marginX:', detail: 'Horizontal margin' },
+            { label: 'type:', detail: 'Shape type' },
+            { label: 'x:', detail: 'X position' },
+            { label: 'y:', detail: 'Y position' },
+            { label: 'x2:', detail: 'End X position (line/arrow)' },
+            { label: 'y2:', detail: 'End Y position (line/arrow)' },
+            { label: 'width:', detail: 'Width' },
+            { label: 'height:', detail: 'Height' },
+            { label: 'r:', detail: 'Radius (circle)' },
+            { label: 'rx:', detail: 'X radius (ellipse) or corner radius' },
+            { label: 'ry:', detail: 'Y radius (ellipse)' },
+            { label: 'fill:', detail: 'Fill color' },
+            { label: 'stroke:', detail: 'Stroke color' },
+            { label: 'strokeWidth:', detail: 'Stroke width' },
+            { label: 'opacity:', detail: 'Opacity (0-1)' },
+            { label: 'label:', detail: 'Shape label text' },
+            { label: 'labelColor:', detail: 'Label text color' },
+            { label: 'labelSize:', detail: 'Label font size' },
+            { label: 'points:', detail: 'Points for polygon/polyline' },
+            { label: 'd:', detail: 'Path data' },
+            { label: 'arrow:', detail: 'Show arrow (line)' },
+            { label: 'size:', detail: 'Size (diamond)' },
             { label: 'header:', detail: 'Header config' },
             { label: 'footer:', detail: 'Footer config' },
             { label: 'show:', detail: 'Show/hide' },
@@ -1165,6 +1312,13 @@
             { label: 'background:', detail: 'Background' },
             { label: 'accent:', detail: 'Accent color' },
             { label: 'bullet:', detail: 'Bullet color' },
+            { label: 'headerBg:', detail: 'Table header background' },
+            { label: 'headerColor:', detail: 'Table header text color' },
+            { label: 'striped:', detail: 'Striped rows' },
+            { label: 'border:', detail: 'Show border' },
+            { label: 'fontSize:', detail: 'Table font size' },
+            { label: 'colWidths:', detail: 'Column widths array' },
+            { label: 'rowHeight:', detail: 'Row height in pixels' },
             { label: 'items:', detail: 'List items' },
             { label: 'events:', detail: 'Timeline events' },
             { label: 'contact:', detail: 'Contact info' },
@@ -1202,6 +1356,34 @@
             { label: 'horizontal', detail: 'Horizontal' },
             { label: 'vertical', detail: 'Vertical' },
             { label: 'box-arrow', detail: 'Box arrow diagram' },
+            { label: 'javascript', detail: 'JavaScript language' },
+            { label: 'python', detail: 'Python language' },
+            { label: 'java', detail: 'Java language' },
+            { label: 'rust', detail: 'Rust language' },
+            { label: 'go', detail: 'Go language' },
+            { label: 'yaml', detail: 'YAML language' },
+            { label: 'sql', detail: 'SQL language' },
+            { label: 'html', detail: 'HTML language' },
+            { label: 'css', detail: 'CSS language' },
+            { label: 'bash', detail: 'Bash/Shell language' },
+            { label: 'dark', detail: 'Dark code theme' },
+            { label: 'light', detail: 'Light code theme' },
+            { label: 'match', detail: 'Match slide theme colors' },
+            { label: 'rect', detail: 'Rectangle shape' },
+            { label: 'circle', detail: 'Circle shape' },
+            { label: 'ellipse', detail: 'Ellipse shape' },
+            { label: 'line', detail: 'Line shape' },
+            { label: 'arrow', detail: 'Arrow shape' },
+            { label: 'polygon', detail: 'Polygon shape' },
+            { label: 'polyline', detail: 'Polyline shape' },
+            { label: 'path', detail: 'SVG path shape' },
+            { label: 'diamond', detail: 'Diamond shape' },
+            { label: 'triangle', detail: 'Triangle shape' },
+            { label: 'group', detail: 'Shape group' },
+            { label: 'LR', detail: 'Left to Right direction' },
+            { label: 'RL', detail: 'Right to Left direction' },
+            { label: 'TB', detail: 'Top to Bottom direction' },
+            { label: 'BT', detail: 'Bottom to Top direction' },
             { label: 'true', detail: 'Boolean true' },
             { label: 'false', detail: 'Boolean false' },
           ];
@@ -1796,6 +1978,867 @@
         svg += renderDiagram(body.diagram, colors, W, H);
       }
       
+      // Table (Markdown format)
+      if (body.table) {
+        svg += renderTable(body.table, body.tableStyle, colors, W, H);
+      }
+      
+      // Code block
+      if (body.code) {
+        svg += renderCodeBlock(body.code, colors, W, H);
+      }
+      
+      // Math (LaTeX/KaTeX)
+      if (body.math) {
+        svg += renderMath(body.math, body.mathStyle, colors, W, H);
+      }
+      
+      // Shapes (SVG primitives)
+      if (body.shapes) {
+        svg += renderShapes(body.shapes, colors, W, H);
+      }
+      
+      // Flowchart (Mermaid-style)
+      if (body.flowchart) {
+        svg += renderFlowchart(body.flowchart, colors, W, H);
+      }
+      
+      // Sequence diagram
+      if (body.sequence) {
+        svg += renderSequence(body.sequence, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    // Parse Markdown table
+    function parseMarkdownTable(tableStr) {
+      const lines = tableStr.trim().split('\n').filter(line => line.trim());
+      if (lines.length < 2) return { headers: [], rows: [], aligns: [] };
+      
+      // Parse headers (first line)
+      const headers = lines[0]
+        .split('|')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+      
+      // Parse alignment from separator line (line with |---|---|)
+      const aligns = [];
+      if (lines.length >= 2) {
+        const separatorCells = lines[1].split('|').filter(c => c.trim().length > 0);
+        separatorCells.forEach(cell => {
+          const trimmed = cell.trim();
+          if (trimmed.startsWith(':') && trimmed.endsWith(':')) {
+            aligns.push('center');
+          } else if (trimmed.endsWith(':')) {
+            aligns.push('right');
+          } else {
+            aligns.push('left');  // default or |:--| or |--|
+          }
+        });
+      }
+      
+      // Parse data rows
+      const rows = [];
+      for (let i = 2; i < lines.length; i++) {
+        const row = lines[i]
+          .split('|')
+          .slice(1, -1)  // Remove first and last empty elements
+          .map(c => c.trim());
+        
+        if (row.length > 0) {
+          rows.push(row);
+        }
+      }
+      
+      return { headers, rows, aligns };
+    }
+
+    // Render table as SVG
+    function renderTable(tableStr, tableStyle, colors, W, H) {
+      let svg = '';
+      
+      const { headers, rows, aligns } = parseMarkdownTable(tableStr);
+      if (headers.length === 0) return svg;
+      
+      // Style options
+      const style = tableStyle || {};
+      const headerBg = style.headerBg || colors.accent;
+      const headerColor = style.headerColor || colors.background;
+      const striped = style.striped !== false;
+      const border = style.border !== false;
+      const fontSize = style.fontSize || 24;
+      const rowHeight = style.rowHeight || 56;
+      
+      // Calculate column widths based on content length
+      const colCount = headers.length;
+      const padding = 32;  // padding on each side
+      
+      // Estimate text width (rough: CJK ~= fontSize, ASCII ~= fontSize * 0.6)
+      function estimateTextWidth(text, size) {
+        let width = 0;
+        for (const char of text) {
+          // CJK characters (wider)
+          if (/[\u3000-\u9fff\uff00-\uffef]/.test(char)) {
+            width += size * 0.9;
+          } else {
+            width += size * 0.55;
+          }
+        }
+        return width + padding * 2;
+      }
+      
+      // Use custom colWidths if provided, otherwise auto-calculate
+      let colWidths;
+      if (style.colWidths && Array.isArray(style.colWidths)) {
+        // Use provided widths (extend with auto for missing columns)
+        colWidths = headers.map((header, colIdx) => {
+          if (style.colWidths[colIdx] !== undefined) {
+            return style.colWidths[colIdx];
+          }
+          // Auto-calculate for unspecified columns
+          let maxWidth = estimateTextWidth(header, fontSize);
+          rows.forEach(row => {
+            if (row[colIdx]) {
+              const cellWidth = estimateTextWidth(row[colIdx].replace(/\*\*/g, ''), fontSize);
+              maxWidth = Math.max(maxWidth, cellWidth);
+            }
+          });
+          return Math.min(400, Math.max(100, maxWidth));
+        });
+      } else {
+        // Auto-calculate all column widths
+        colWidths = headers.map((header, colIdx) => {
+          let maxWidth = estimateTextWidth(header, fontSize);
+          rows.forEach(row => {
+            if (row[colIdx]) {
+              const cellWidth = estimateTextWidth(row[colIdx].replace(/\*\*/g, ''), fontSize);
+              maxWidth = Math.max(maxWidth, cellWidth);
+            }
+          });
+          return Math.min(400, Math.max(100, maxWidth));
+        });
+      }
+      
+      // Calculate total table width
+      const tableW = colWidths.reduce((sum, w) => sum + w, 0);
+      const maxTableW = W - 240;
+      
+      // Scale down if table is too wide (only for auto-calculated)
+      if (!style.colWidths && tableW > maxTableW) {
+        const scale = maxTableW / tableW;
+        colWidths.forEach((w, i) => colWidths[i] = w * scale);
+      }
+      
+      const finalTableW = colWidths.reduce((sum, w) => sum + w, 0);
+      const tableX = (W - finalTableW) / 2;  // Center the table
+      const tableY = 200;
+      const tableH = rowHeight * (rows.length + 1);
+      
+      // Table background
+      if (border) {
+        svg += `<rect x="${tableX}" y="${tableY}" width="${finalTableW}" height="${tableH}" fill="none" stroke="${colors.muted}" stroke-width="1" rx="4"/>`;
+      }
+      
+      // Header row
+      svg += `<rect x="${tableX}" y="${tableY}" width="${finalTableW}" height="${rowHeight}" fill="${headerBg}" rx="4"/>`;
+      svg += `<rect x="${tableX}" y="${tableY + rowHeight - 4}" width="${finalTableW}" height="4" fill="${headerBg}"/>`;
+      
+      // Helper to get column X position
+      function getColX(colIndex) {
+        let x = tableX;
+        for (let i = 0; i < colIndex; i++) {
+          x += colWidths[i];
+        }
+        return x;
+      }
+      
+      headers.forEach((header, i) => {
+        const cellX = getColX(i);
+        const cellW = colWidths[i];
+        const textAnchor = 'middle';  // headers always centered
+        const textX = cellX + cellW / 2;
+        const textY = tableY + rowHeight / 2 + fontSize / 3;
+        
+        svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" font-weight="600" fill="${headerColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(header)}</text>`;
+        
+        // Column divider
+        if (border && i > 0) {
+          svg += `<line x1="${cellX}" y1="${tableY}" x2="${cellX}" y2="${tableY + tableH}" stroke="${colors.muted}" stroke-width="1" opacity="0.3"/>`;
+        }
+      });
+      
+      // Data rows
+      rows.forEach((row, rowIndex) => {
+        const rowY = tableY + rowHeight * (rowIndex + 1);
+        
+        // Striped background
+        if (striped && rowIndex % 2 === 1) {
+          svg += `<rect x="${tableX}" y="${rowY}" width="${finalTableW}" height="${rowHeight}" fill="${colors.accent}" opacity="0.05"/>`;
+        }
+        
+        // Row divider
+        if (border) {
+          svg += `<line x1="${tableX}" y1="${rowY}" x2="${tableX + finalTableW}" y2="${rowY}" stroke="${colors.muted}" stroke-width="1" opacity="0.3"/>`;
+        }
+        
+        row.forEach((cell, colIndex) => {
+          const cellX = getColX(colIndex);
+          const cellW = colWidths[colIndex] || 100;
+          const align = aligns[colIndex] || 'left';
+          
+          // Calculate text position based on alignment
+          let textX, textAnchor;
+          const cellPadding = 16;
+          if (align === 'center') {
+            textX = cellX + cellW / 2;
+            textAnchor = 'middle';
+          } else if (align === 'right') {
+            textX = cellX + cellW - cellPadding;
+            textAnchor = 'end';
+          } else {  // left
+            textX = cellX + cellPadding;
+            textAnchor = 'start';
+          }
+          
+          const textY = rowY + rowHeight / 2 + fontSize / 3;
+          
+          // Remove ** for bold (we'll render all text the same for now)
+          const cleanCell = cell.replace(/\*\*/g, '');
+          
+          svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(cleanCell)}</text>`;
+        });
+      });
+      
+      return svg;
+    }
+
+    // Render code block with syntax highlighting
+    function renderCodeBlock(codeConfig, colors, W, H) {
+      let svg = '';
+      
+      const content = typeof codeConfig === 'string' ? codeConfig : codeConfig.content || '';
+      const language = codeConfig.language || 'text';
+      const showLineNumbers = codeConfig.lineNumbers !== false;
+      const fontSize = codeConfig.fontSize || 20;
+      const lineHeight = fontSize * 1.5;
+      
+      // Code style options
+      const codeStyle = codeConfig.style || {};
+      
+      // Code block dimensions
+      const codeX = 120;
+      const codeY = 200;
+      const codeW = W - 240;
+      const padding = 24;
+      
+      // Split into lines
+      const lines = content.split('\n');
+      const codeH = Math.max(lines.length * lineHeight + padding * 2, 100);
+      
+      // Helper: darken/lighten a hex color
+      function adjustColor(hex, amount) {
+        hex = hex.replace('#', '');
+        const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+        const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+        const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+        return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+      }
+      
+      // Helper: blend two colors
+      function blendColors(color1, color2, ratio) {
+        const hex1 = color1.replace('#', '');
+        const hex2 = color2.replace('#', '');
+        const r = Math.round(parseInt(hex1.substr(0, 2), 16) * (1 - ratio) + parseInt(hex2.substr(0, 2), 16) * ratio);
+        const g = Math.round(parseInt(hex1.substr(2, 2), 16) * (1 - ratio) + parseInt(hex2.substr(2, 2), 16) * ratio);
+        const b = Math.round(parseInt(hex1.substr(4, 2), 16) * (1 - ratio) + parseInt(hex2.substr(4, 2), 16) * ratio);
+        return '#' + [r, g, b].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
+      }
+      
+      // Helper: get brightness
+      function getBrightness(hex) {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        return (r * 299 + g * 587 + b * 114) / 1000;
+      }
+      
+      // Background color - customizable or auto-detect based on theme
+      let bgColor, textColor, syntaxColors;
+      const themeBg = colors.background;
+      const themeAccent = colors.accent;
+      const isLightTheme = getBrightness(themeBg) > 128;
+      
+      if (codeStyle.theme === 'match') {
+        // Match theme colors - use accent-tinted background
+        if (isLightTheme) {
+          bgColor = blendColors(themeBg, themeAccent, 0.08);
+          bgColor = adjustColor(bgColor, -30);  // slightly darker
+          textColor = adjustColor(themeBg, -180);
+        } else {
+          bgColor = blendColors(themeBg, themeAccent, 0.15);
+          bgColor = adjustColor(bgColor, -20);
+          textColor = adjustColor(themeBg, 180);
+        }
+        
+        // Theme-based syntax colors
+        const accentBright = adjustColor(themeAccent, 40);
+        const accentDark = adjustColor(themeAccent, -40);
+        syntaxColors = {
+          keyword: themeAccent,
+          string: isLightTheme ? '#16a34a' : '#a3e635',
+          number: isLightTheme ? '#ea580c' : '#fb923c',
+          comment: blendColors(textColor, bgColor, 0.5),
+          function: accentBright,
+          operator: isLightTheme ? accentDark : accentBright,
+          default: textColor
+        };
+      } else if (codeStyle.background) {
+        bgColor = codeStyle.background;
+        const brightness = getBrightness(bgColor);
+        textColor = brightness > 128 ? '#1e293b' : '#e0e0e0';
+        syntaxColors = null;  // will set below
+      } else if (codeStyle.theme === 'light') {
+        bgColor = '#f8fafc';
+        textColor = '#1e293b';
+        syntaxColors = null;
+      } else if (codeStyle.theme === 'dark') {
+        bgColor = '#1e293b';
+        textColor = '#e0e0e0';
+        syntaxColors = null;
+      } else {
+        // Auto: dark code block for light themes, darker for dark themes
+        bgColor = isLightTheme ? '#1e293b' : '#0f172a';
+        textColor = '#e0e0e0';
+        syntaxColors = null;
+      }
+      
+      // Default syntax colors if not set
+      if (!syntaxColors) {
+        const isDarkBg = getBrightness(bgColor) < 128;
+        syntaxColors = isDarkBg ? {
+          keyword: '#c792ea',
+          string: '#c3e88d',
+          number: '#f78c6c',
+          comment: '#546e7a',
+          function: '#82aaff',
+          operator: '#89ddff',
+          default: textColor
+        } : {
+          keyword: '#7c3aed',
+          string: '#16a34a',
+          number: '#ea580c',
+          comment: '#64748b',
+          function: '#2563eb',
+          operator: '#0891b2',
+          default: textColor
+        };
+      }
+      
+      svg += `<rect x="${codeX}" y="${codeY}" width="${codeW}" height="${codeH}" rx="8" fill="${bgColor}"/>`;
+      
+      // Language badge
+      if (language && language !== 'text') {
+        svg += `<rect x="${codeX + codeW - 100}" y="${codeY}" width="100" height="28" rx="0 8 0 8" fill="${colors.accent}" opacity="0.8"/>`;
+        svg += `<text x="${codeX + codeW - 50}" y="${codeY + 19}" text-anchor="middle" font-size="12" fill="#ffffff" font-family="Inter, sans-serif">${escapeHtml(language)}</text>`;
+      }
+      
+      // Language-specific keywords
+      const keywords = {
+        javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'class', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'throw', 'new', 'this', 'true', 'false', 'null', 'undefined'],
+        python: ['def', 'class', 'return', 'if', 'elif', 'else', 'for', 'while', 'import', 'from', 'as', 'try', 'except', 'raise', 'with', 'lambda', 'True', 'False', 'None', 'and', 'or', 'not', 'in', 'is', 'pass', 'break', 'continue'],
+        java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'throw', 'new', 'this', 'static', 'final', 'void', 'int', 'boolean', 'String', 'true', 'false', 'null'],
+        rust: ['fn', 'let', 'mut', 'const', 'struct', 'enum', 'impl', 'trait', 'pub', 'use', 'mod', 'if', 'else', 'match', 'loop', 'while', 'for', 'in', 'return', 'self', 'Self', 'true', 'false', 'Some', 'None', 'Ok', 'Err'],
+        go: ['func', 'var', 'const', 'type', 'struct', 'interface', 'package', 'import', 'return', 'if', 'else', 'for', 'range', 'switch', 'case', 'default', 'go', 'chan', 'defer', 'true', 'false', 'nil'],
+        yaml: ['true', 'false', 'null', 'yes', 'no'],
+        sql: ['SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'TABLE', 'INDEX', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'ON', 'AND', 'OR', 'NOT', 'NULL', 'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'AS'],
+      };
+      
+      const langKeywords = keywords[language] || keywords['javascript'] || [];
+      
+      // Tokenize and highlight a line
+      function highlightLine(line) {
+        const tokens = [];
+        let remaining = line;
+        
+        while (remaining.length > 0) {
+          let matched = false;
+          
+          // Comment (// or #)
+          if (/^(\/\/.*|#.*)/.test(remaining)) {
+            const match = remaining.match(/^(\/\/.*|#.*)/)[0];
+            tokens.push({ text: match, color: syntaxColors.comment });
+            remaining = remaining.slice(match.length);
+            matched = true;
+          }
+          // String (single or double quotes)
+          else if (/^(["'`])/.test(remaining)) {
+            const quote = remaining[0];
+            const regex = new RegExp(`^${quote}[^${quote}]*${quote}`);
+            const match = remaining.match(regex);
+            if (match) {
+              tokens.push({ text: match[0], color: syntaxColors.string });
+              remaining = remaining.slice(match[0].length);
+              matched = true;
+            }
+          }
+          // Number
+          else if (/^-?\d+\.?\d*/.test(remaining)) {
+            const match = remaining.match(/^-?\d+\.?\d*/)[0];
+            tokens.push({ text: match, color: syntaxColors.number });
+            remaining = remaining.slice(match.length);
+            matched = true;
+          }
+          // Keyword or identifier
+          else if (/^[a-zA-Z_]\w*/.test(remaining)) {
+            const match = remaining.match(/^[a-zA-Z_]\w*/)[0];
+            if (langKeywords.includes(match)) {
+              tokens.push({ text: match, color: syntaxColors.keyword });
+            } else if (/^[A-Z]/.test(match)) {
+              tokens.push({ text: match, color: syntaxColors.function });
+            } else {
+              tokens.push({ text: match, color: syntaxColors.default });
+            }
+            remaining = remaining.slice(match.length);
+            matched = true;
+          }
+          // Operator
+          else if (/^[+\-*/%=<>!&|^~?:]+/.test(remaining)) {
+            const match = remaining.match(/^[+\-*/%=<>!&|^~?:]+/)[0];
+            tokens.push({ text: match, color: syntaxColors.operator });
+            remaining = remaining.slice(match.length);
+            matched = true;
+          }
+          
+          // Default: single character
+          if (!matched) {
+            tokens.push({ text: remaining[0], color: syntaxColors.default });
+            remaining = remaining.slice(1);
+          }
+        }
+        
+        return tokens;
+      }
+      
+      // Render lines
+      const lineNumWidth = showLineNumbers ? 50 : 0;
+      let y = codeY + padding + fontSize;
+      
+      lines.forEach((line, i) => {
+        // Line number
+        if (showLineNumbers) {
+          svg += `<text x="${codeX + padding + 30}" y="${y}" text-anchor="end" font-size="${fontSize}" fill="${syntaxColors.comment}" font-family="JetBrains Mono, monospace">${i + 1}</text>`;
+        }
+        
+        // Code line with highlighting
+        const tokens = highlightLine(line);
+        let x = codeX + padding + lineNumWidth + 10;
+        
+        tokens.forEach(token => {
+          svg += `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${token.color}" font-family="JetBrains Mono, monospace">${escapeHtml(token.text)}</text>`;
+          // Estimate character width for monospace font
+          x += token.text.length * fontSize * 0.6;
+        });
+        
+        y += lineHeight;
+      });
+      
+      return svg;
+    }
+
+    // Render math equation using KaTeX
+    function renderMath(mathConfig, mathStyle, colors, W, H) {
+      let svg = '';
+      
+      const style = mathStyle || {};
+      const fontSize = style.fontSize || 36;
+      const align = style.align || 'center';
+      const lineSpacing = style.lineSpacing || 1.2;
+      
+      // Support both single formula and array of formulas
+      let formulas = [];
+      if (typeof mathConfig === 'string') {
+        formulas = [mathConfig];
+      } else if (Array.isArray(mathConfig)) {
+        formulas = mathConfig;
+      } else if (mathConfig.formula) {
+        formulas = Array.isArray(mathConfig.formula) ? mathConfig.formula : [mathConfig.formula];
+      }
+      
+      // Calculate alignment
+      let textAnchor;
+      let mathX;
+      if (align === 'left') {
+        mathX = 120;
+        textAnchor = 'start';
+      } else if (align === 'right') {
+        mathX = W - 120;
+        textAnchor = 'end';
+      } else {
+        mathX = W / 2;
+        textAnchor = 'middle';
+      }
+      
+      // Starting Y position
+      let currentY = 200;
+      const foreignWidth = W - 240;
+      const foreignX = (W - foreignWidth) / 2;
+      
+      formulas.forEach((formula, index) => {
+        // Detect multiline formulas
+        const isMultiline = formula.includes('\\begin{') || formula.includes('\\\\') || formula.split('\n').length > 1;
+        
+        // Calculate height based on fontSize and content type
+        const baseHeight = fontSize * 3;  // Base height proportional to font size
+        const formulaHeight = isMultiline ? Math.max(baseHeight * 3, 300) : Math.max(baseHeight, 120);
+        
+        // Check if KaTeX is available
+        if (typeof katex !== 'undefined') {
+          try {
+            // Render to HTML string
+            const mathHtml = katex.renderToString(formula, {
+              displayMode: true,
+              throwOnError: false,
+              output: 'html'
+            });
+            
+            svg += `<foreignObject x="${foreignX}" y="${currentY}" width="${foreignWidth}" height="${formulaHeight}">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="
+                display: flex;
+                justify-content: ${align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center'};
+                align-items: flex-start;
+                width: 100%;
+                height: 100%;
+              ">
+                <div style="font-size: ${fontSize}px; color: ${colors.text};">
+                  ${mathHtml}
+                </div>
+              </div>
+            </foreignObject>`;
+          } catch (e) {
+            // Fallback to text display
+            svg += renderMathAsText(formula, mathX, currentY + fontSize, textAnchor, fontSize, colors);
+          }
+        } else {
+          // KaTeX not loaded - display as formatted text
+          svg += renderMathAsText(formula, mathX, currentY + fontSize, textAnchor, fontSize, colors);
+        }
+        
+        // Move to next line - spacing based on fontSize
+        currentY += fontSize * 2 * lineSpacing;
+      });
+      
+      return svg;
+    }
+    
+    // Render math as formatted text (fallback)
+    function renderMathAsText(formula, x, y, anchor, fontSize, colors) {
+      let svg = '';
+      
+      // Simple parsing for common LaTeX patterns
+      let display = formula
+        // Fractions
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+        // Roots
+        .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+        .replace(/\\sqrt/g, '√')
+        // Brackets
+        .replace(/\\left\(/g, '(')
+        .replace(/\\right\)/g, ')')
+        .replace(/\\left\[/g, '[')
+        .replace(/\\right\]/g, ']')
+        .replace(/\\left\{/g, '{')
+        .replace(/\\right\}/g, '}')
+        .replace(/\\left\|/g, '|')
+        .replace(/\\right\|/g, '|')
+        .replace(/\\left\./g, '')
+        .replace(/\\right\./g, '')
+        // Trigonometric functions
+        .replace(/\\sin/g, 'sin')
+        .replace(/\\cos/g, 'cos')
+        .replace(/\\tan/g, 'tan')
+        .replace(/\\cot/g, 'cot')
+        .replace(/\\sec/g, 'sec')
+        .replace(/\\csc/g, 'csc')
+        .replace(/\\arcsin/g, 'arcsin')
+        .replace(/\\arccos/g, 'arccos')
+        .replace(/\\arctan/g, 'arctan')
+        .replace(/\\sinh/g, 'sinh')
+        .replace(/\\cosh/g, 'cosh')
+        .replace(/\\tanh/g, 'tanh')
+        // Other functions
+        .replace(/\\log/g, 'log')
+        .replace(/\\ln/g, 'ln')
+        .replace(/\\exp/g, 'exp')
+        .replace(/\\lim/g, 'lim')
+        .replace(/\\max/g, 'max')
+        .replace(/\\min/g, 'min')
+        // Operators
+        .replace(/\\pm/g, '±')
+        .replace(/\\mp/g, '∓')
+        .replace(/\\times/g, '×')
+        .replace(/\\div/g, '÷')
+        .replace(/\\cdot/g, '·')
+        .replace(/\\ast/g, '∗')
+        .replace(/\\star/g, '⋆')
+        // Relations
+        .replace(/\\leq/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\neq/g, '≠')
+        .replace(/\\approx/g, '≈')
+        .replace(/\\equiv/g, '≡')
+        .replace(/\\sim/g, '∼')
+        .replace(/\\propto/g, '∝')
+        .replace(/\\ll/g, '≪')
+        .replace(/\\gg/g, '≫')
+        // Greek letters (lowercase)
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\delta/g, 'δ')
+        .replace(/\\epsilon/g, 'ε')
+        .replace(/\\varepsilon/g, 'ε')
+        .replace(/\\zeta/g, 'ζ')
+        .replace(/\\eta/g, 'η')
+        .replace(/\\theta/g, 'θ')
+        .replace(/\\vartheta/g, 'ϑ')
+        .replace(/\\iota/g, 'ι')
+        .replace(/\\kappa/g, 'κ')
+        .replace(/\\lambda/g, 'λ')
+        .replace(/\\mu/g, 'μ')
+        .replace(/\\nu/g, 'ν')
+        .replace(/\\xi/g, 'ξ')
+        .replace(/\\pi/g, 'π')
+        .replace(/\\rho/g, 'ρ')
+        .replace(/\\sigma/g, 'σ')
+        .replace(/\\tau/g, 'τ')
+        .replace(/\\upsilon/g, 'υ')
+        .replace(/\\phi/g, 'φ')
+        .replace(/\\varphi/g, 'ϕ')
+        .replace(/\\chi/g, 'χ')
+        .replace(/\\psi/g, 'ψ')
+        .replace(/\\omega/g, 'ω')
+        // Greek letters (uppercase)
+        .replace(/\\Gamma/g, 'Γ')
+        .replace(/\\Delta/g, 'Δ')
+        .replace(/\\Theta/g, 'Θ')
+        .replace(/\\Lambda/g, 'Λ')
+        .replace(/\\Xi/g, 'Ξ')
+        .replace(/\\Pi/g, 'Π')
+        .replace(/\\Sigma/g, 'Σ')
+        .replace(/\\Phi/g, 'Φ')
+        .replace(/\\Psi/g, 'Ψ')
+        .replace(/\\Omega/g, 'Ω')
+        // Big operators
+        .replace(/\\sum/g, 'Σ')
+        .replace(/\\prod/g, 'Π')
+        .replace(/\\int/g, '∫')
+        .replace(/\\iint/g, '∬')
+        .replace(/\\iiint/g, '∭')
+        .replace(/\\oint/g, '∮')
+        // Misc symbols
+        .replace(/\\infty/g, '∞')
+        .replace(/\\partial/g, '∂')
+        .replace(/\\nabla/g, '∇')
+        .replace(/\\forall/g, '∀')
+        .replace(/\\exists/g, '∃')
+        .replace(/\\in/g, '∈')
+        .replace(/\\notin/g, '∉')
+        .replace(/\\subset/g, '⊂')
+        .replace(/\\supset/g, '⊃')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/\\emptyset/g, '∅')
+        .replace(/\\ldots/g, '…')
+        .replace(/\\cdots/g, '⋯')
+        .replace(/\\vdots/g, '⋮')
+        .replace(/\\ddots/g, '⋱')
+        // Arrows
+        .replace(/\\rightarrow/g, '→')
+        .replace(/\\leftarrow/g, '←')
+        .replace(/\\leftrightarrow/g, '↔')
+        .replace(/\\Rightarrow/g, '⇒')
+        .replace(/\\Leftarrow/g, '⇐')
+        .replace(/\\Leftrightarrow/g, '⇔')
+        .replace(/\\to/g, '→')
+        .replace(/\\mapsto/g, '↦')
+        // Superscripts and subscripts
+        .replace(/\^(\d)/g, (_, d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d])
+        .replace(/\^{(\d+)}/g, (_, num) => num.split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join(''))
+        .replace(/\^{n}/g, 'ⁿ')
+        .replace(/\^{i}/g, 'ⁱ')
+        .replace(/\^{-1}/g, '⁻¹')
+        .replace(/\^{-}/g, '⁻')
+        .replace(/\^{\\prime}/g, '′')
+        .replace(/_(\d)/g, (_, d) => '₀₁₂₃₄₅₆₇₈₉'[d])
+        .replace(/_{(\d+)}/g, (_, num) => num.split('').map(d => '₀₁₂₃₄₅₆₇₈₉'[d]).join(''))
+        .replace(/_{i}/g, 'ᵢ')
+        .replace(/_{j}/g, 'ⱼ')
+        .replace(/_{n}/g, 'ₙ')
+        .replace(/_{x}/g, 'ₓ')
+        // Spacing
+        .replace(/\\quad/g, '  ')
+        .replace(/\\qquad/g, '    ')
+        .replace(/\\,/g, ' ')
+        .replace(/\\;/g, ' ')
+        .replace(/\\!/g, '')
+        // Text mode
+        .replace(/\\text\{([^}]+)\}/g, '$1')
+        .replace(/\\mathrm\{([^}]+)\}/g, '$1')
+        .replace(/\\mathbf\{([^}]+)\}/g, '$1')
+        // Cleanup remaining braces and backslashes
+        .replace(/\{|\}/g, '')
+        .replace(/\\/g, '');
+      
+      svg += `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${fontSize}" fill="${colors.text}" font-family="Times New Roman, serif" font-style="italic">${escapeHtml(display)}</text>`;
+      
+      return svg;
+    }
+
+    // Render shapes (SVG primitives)
+    function renderShapes(shapes, colors, W, H) {
+      let svg = '';
+      
+      // Arrow marker definition
+      svg += `<defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="${colors.accent}"/>
+        </marker>
+        <marker id="arrowhead-text" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="${colors.text}"/>
+        </marker>
+      </defs>`;
+      
+      shapes.forEach(shape => {
+        const type = shape.type || 'rect';
+        const x = shape.x || 0;
+        const y = shape.y || 0;
+        const fill = shape.fill || colors.accent;
+        const stroke = shape.stroke || 'none';
+        const strokeWidth = shape.strokeWidth || 2;
+        const opacity = shape.opacity !== undefined ? shape.opacity : 1;
+        const label = shape.label || '';
+        const labelColor = shape.labelColor || colors.background;
+        const labelSize = shape.labelSize || 24;
+        
+        switch (type) {
+          case 'rect': {
+            const width = shape.width || 200;
+            const height = shape.height || 100;
+            const rx = shape.rx || 0;
+            svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            if (label) {
+              svg += `<text x="${x + width/2}" y="${y + height/2 + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'circle': {
+            const r = shape.r || 50;
+            svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            if (label) {
+              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'ellipse': {
+            const rx = shape.rx || 100;
+            const ry = shape.ry || 50;
+            svg += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            if (label) {
+              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'line': {
+            const x2 = shape.x2 || x + 100;
+            const y2 = shape.y2 || y;
+            const lineStroke = stroke !== 'none' ? stroke : colors.text;
+            const arrow = shape.arrow || false;
+            svg += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${lineStroke}" stroke-width="${strokeWidth}" ${arrow ? 'marker-end="url(#arrowhead-text)"' : ''}/>`;
+            break;
+          }
+          
+          case 'arrow': {
+            const x2 = shape.x2 || x + 100;
+            const y2 = shape.y2 || y;
+            const arrowStroke = stroke !== 'none' ? stroke : colors.accent;
+            svg += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${arrowStroke}" stroke-width="${strokeWidth}" marker-end="url(#arrowhead)"/>`;
+            if (label) {
+              const midX = (x + x2) / 2;
+              const midY = (y + y2) / 2 - 10;
+              svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${labelSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'polygon': {
+            const points = shape.points || '0,0 100,0 50,100';
+            svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            break;
+          }
+          
+          case 'polyline': {
+            const points = shape.points || '0,0 50,50 100,0';
+            const lineStroke = stroke !== 'none' ? stroke : colors.accent;
+            svg += `<polyline points="${points}" fill="none" stroke="${lineStroke}" stroke-width="${strokeWidth}"/>`;
+            break;
+          }
+          
+          case 'path': {
+            const d = shape.d || '';
+            const pathStroke = stroke !== 'none' ? stroke : colors.accent;
+            svg += `<path d="${d}" fill="${fill}" stroke="${pathStroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            break;
+          }
+          
+          case 'text': {
+            const fontSize = shape.fontSize || 28;
+            const anchor = shape.anchor || 'start';
+            const textFill = fill !== colors.accent ? fill : colors.text;
+            svg += `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${fontSize}" fill="${textFill}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            break;
+          }
+          
+          case 'diamond': {
+            const size = shape.size || 100;
+            const cx = x;
+            const cy = y;
+            const points = `${cx},${cy-size/2} ${cx+size/2},${cy} ${cx},${cy+size/2} ${cx-size/2},${cy}`;
+            svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            if (label) {
+              svg += `<text x="${cx}" y="${cy + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'triangle': {
+            const width = shape.width || 100;
+            const height = shape.height || 100;
+            const points = `${x},${y+height} ${x+width/2},${y} ${x+width},${y+height}`;
+            svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            if (label) {
+              svg += `<text x="${x + width/2}" y="${y + height*0.7}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            }
+            break;
+          }
+          
+          case 'group': {
+            // Recursive group rendering with transform
+            const transform = shape.transform || '';
+            svg += `<g transform="${transform}">`;
+            if (shape.children && Array.isArray(shape.children)) {
+              svg += renderShapes(shape.children, colors, W, H);
+            }
+            svg += `</g>`;
+            break;
+          }
+        }
+      });
+      
       return svg;
     }
 
@@ -1808,18 +2851,124 @@
       if (typeof text === 'string') {
         const lines = wrapText(text, 70);
         lines.forEach(line => {
-          svg += `<text x="120" y="${y}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(line)}</text>`;
+          svg += renderTextWithInlineMath(line, 120, y, colors, 'start');
           y += 50;
         });
       } else if (Array.isArray(text)) {
         text.forEach(item => {
           svg += `<circle cx="140" cy="${y - 10}" r="6" fill="${colors.bullet}"/>`;
-          svg += `<text x="170" y="${y}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+          svg += renderTextWithInlineMath(item, 170, y, colors, 'start');
           y += 60;
         });
       }
       
       return svg;
+    }
+    
+    // Render text with inline math ($...$)
+    function renderTextWithInlineMath(text, x, y, colors, anchor) {
+      // Check if text contains inline math
+      if (!text.includes('$')) {
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(text)}</text>`;
+      }
+      
+      // Split text by $...$ patterns
+      const parts = [];
+      let remaining = text;
+      let match;
+      const mathRegex = /\$([^$]+)\$/g;
+      let lastIndex = 0;
+      
+      while ((match = mathRegex.exec(text)) !== null) {
+        // Text before math
+        if (match.index > lastIndex) {
+          parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+        }
+        // Math content
+        parts.push({ type: 'math', content: match[1] });
+        lastIndex = match.index + match[0].length;
+      }
+      // Remaining text
+      if (lastIndex < text.length) {
+        parts.push({ type: 'text', content: text.substring(lastIndex) });
+      }
+      
+      // If KaTeX is available, use foreignObject
+      if (typeof katex !== 'undefined') {
+        let html = '';
+        parts.forEach(part => {
+          if (part.type === 'math') {
+            try {
+              html += katex.renderToString(part.content, {
+                displayMode: false,
+                throwOnError: false
+              });
+            } catch (e) {
+              html += `<span style="color: red;">${escapeHtml(part.content)}</span>`;
+            }
+          } else {
+            html += escapeHtml(part.content);
+          }
+        });
+        
+        return `<foreignObject x="${x}" y="${y - colors.textSize * 0.8}" width="${1600 - x - 100}" height="${colors.textSize * 2}">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="
+            font-size: ${colors.textSize}px;
+            color: ${colors.text};
+            font-family: Inter, Noto Sans JP, sans-serif;
+            white-space: nowrap;
+          ">${html}</div>
+        </foreignObject>`;
+      } else {
+        // Fallback: convert math to Unicode
+        let display = text;
+        parts.forEach(part => {
+          if (part.type === 'math') {
+            const converted = convertMathToUnicode(part.content);
+            display = display.replace('$' + part.content + '$', converted);
+          }
+        });
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(display)}</text>`;
+      }
+    }
+    
+    // Convert simple LaTeX math to Unicode (for fallback)
+    function convertMathToUnicode(formula) {
+      return formula
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+        .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+        .replace(/\\sqrt/g, '√')
+        .replace(/\\pm/g, '±')
+        .replace(/\\times/g, '×')
+        .replace(/\\div/g, '÷')
+        .replace(/\\cdot/g, '·')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\neq/g, '≠')
+        .replace(/\\approx/g, '≈')
+        .replace(/\\infty/g, '∞')
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\delta/g, 'δ')
+        .replace(/\\theta/g, 'θ')
+        .replace(/\\lambda/g, 'λ')
+        .replace(/\\mu/g, 'μ')
+        .replace(/\\pi/g, 'π')
+        .replace(/\\sigma/g, 'σ')
+        .replace(/\\phi/g, 'φ')
+        .replace(/\\omega/g, 'ω')
+        .replace(/\\sum/g, 'Σ')
+        .replace(/\\int/g, '∫')
+        .replace(/\\partial/g, '∂')
+        .replace(/\\rightarrow/g, '→')
+        .replace(/\\Rightarrow/g, '⇒')
+        .replace(/\^(\d)/g, (_, d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d])
+        .replace(/\^{(\d+)}/g, (_, num) => num.split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join(''))
+        .replace(/_(\d)/g, (_, d) => '₀₁₂₃₄₅₆₇₈₉'[d])
+        .replace(/_{(\d+)}/g, (_, num) => num.split('').map(d => '₀₁₂₃₄₅₆₇₈₉'[d]).join(''))
+        .replace(/\{|\}/g, '')
+        .replace(/\\/g, '');
     }
 
     function renderFigureLayout(body, colors, W, H) {
@@ -1926,6 +3075,468 @@
           x += boxW + gap;
         });
       }
+      
+      return svg;
+    }
+
+    // Render Mermaid-style flowchart
+    function renderFlowchart(flowchartConfig, colors, W, H) {
+      let svg = '';
+      
+      // Support both string and object format
+      let flowchartStr, style;
+      if (typeof flowchartConfig === 'string') {
+        flowchartStr = flowchartConfig;
+        style = {};
+      } else {
+        flowchartStr = flowchartConfig.content || flowchartConfig.chart || '';
+        style = flowchartConfig.style || {};
+      }
+      
+      // Style options
+      const nodeWidth = style.nodeWidth || 140;
+      const nodeHeight = style.nodeHeight || 60;
+      const fontSize = style.fontSize || 18;
+      const gapX = style.gapX || 80;
+      const gapY = style.gapY || 80;
+      const startX = style.x || 200;
+      const startY = style.y || 220;
+      
+      // Parse flowchart string
+      const lines = flowchartStr.trim().split('\n').map(l => l.trim()).filter(l => l);
+      
+      // Detect direction
+      let direction = 'LR';  // default: left to right
+      const dirMatch = lines[0].match(/^direction:\s*(LR|RL|TB|BT)$/i);
+      if (dirMatch) {
+        direction = dirMatch[1].toUpperCase();
+        lines.shift();
+      }
+      
+      // Parse nodes and connections
+      const nodes = new Map();  // id -> {id, label, type}
+      const edges = [];         // {from, to, label, style}
+      
+      // Node patterns
+      const nodePatterns = [
+        { regex: /\[\[([^\]]+)\]\]/, type: 'rounded' },    // [[text]] - stadium/rounded
+        { regex: /\(\(([^)]+)\)\)/, type: 'circle' },      // ((text)) - circle
+        { regex: /\{([^}]+)\}/, type: 'diamond' },         // {text} - diamond
+        { regex: /\[([^\]]+)\]/, type: 'rect' },           // [text] - rectangle
+        { regex: /\(([^)]+)\)/, type: 'roundRect' },       // (text) - round rectangle
+        { regex: />([^>]+)\]/, type: 'flag' },             // >text] - flag
+      ];
+      
+      // Edge patterns
+      const edgePatterns = [
+        { regex: /-->\|([^|]+)\|/, style: 'arrow', hasLabel: true },
+        { regex: /-->/, style: 'arrow', hasLabel: false },
+        { regex: /-\.->\|([^|]+)\|/, style: 'dashed', hasLabel: true },
+        { regex: /-\.->/, style: 'dashed', hasLabel: false },
+        { regex: /===>\|([^|]+)\|/, style: 'thick', hasLabel: true },
+        { regex: /===>/, style: 'thick', hasLabel: false },
+        { regex: /---\|([^|]+)\|/, style: 'line', hasLabel: true },
+        { regex: /---/, style: 'line', hasLabel: false },
+      ];
+      
+      // Parse each line
+      lines.forEach(line => {
+        // Try to parse as edge definition
+        let matched = false;
+        
+        for (const ep of edgePatterns) {
+          const parts = line.split(ep.regex);
+          if (parts.length >= 2) {
+            const fromPart = parts[0].trim();
+            const label = ep.hasLabel ? parts[1] : '';
+            const toPart = parts[parts.length - 1].trim();
+            
+            // Parse from node
+            const fromNode = parseFlowchartNode(fromPart, nodePatterns);
+            if (fromNode && !nodes.has(fromNode.id)) {
+              nodes.set(fromNode.id, fromNode);
+            }
+            
+            // Parse to node
+            const toNode = parseFlowchartNode(toPart, nodePatterns);
+            if (toNode && !nodes.has(toNode.id)) {
+              nodes.set(toNode.id, toNode);
+            }
+            
+            if (fromNode && toNode) {
+              edges.push({
+                from: fromNode.id,
+                to: toNode.id,
+                label: label,
+                style: ep.style
+              });
+              matched = true;
+            }
+            break;
+          }
+        }
+        
+        // Single node definition
+        if (!matched) {
+          const node = parseFlowchartNode(line, nodePatterns);
+          if (node && !nodes.has(node.id)) {
+            nodes.set(node.id, node);
+          }
+        }
+      });
+      
+      // Layout nodes
+      const nodeArray = Array.from(nodes.values());
+      const nodePositions = layoutFlowchartNodes(nodeArray, edges, direction, W, H, {
+        nodeWidth, nodeHeight, gapX, gapY, startX, startY
+      });
+      
+      // Arrow marker
+      svg += `<defs>
+        <marker id="fc-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="${colors.accent}"/>
+        </marker>
+      </defs>`;
+      
+      // Draw edges first (behind nodes)
+      edges.forEach(edge => {
+        const fromPos = nodePositions.get(edge.from);
+        const toPos = nodePositions.get(edge.to);
+        if (!fromPos || !toPos) return;
+        
+        const strokeWidth = edge.style === 'thick' ? 4 : 2;
+        const dashArray = edge.style === 'dashed' ? '8,4' : 'none';
+        const markerEnd = edge.style === 'line' ? '' : 'marker-end="url(#fc-arrow)"';
+        
+        // Calculate edge points
+        const [x1, y1, x2, y2] = getEdgePoints(fromPos, toPos, direction);
+        
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colors.accent}" stroke-width="${strokeWidth}" stroke-dasharray="${dashArray}" ${markerEnd}/>`;
+        
+        // Edge label
+        if (edge.label) {
+          const midX = (x1 + x2) / 2;
+          const midY = (y1 + y2) / 2 - 10;
+          svg += `<rect x="${midX - 30}" y="${midY - 14}" width="60" height="20" rx="4" fill="${colors.background}"/>`;
+          svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${fontSize * 0.8}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(edge.label)}</text>`;
+        }
+      });
+      
+      // Draw nodes
+      nodeArray.forEach(node => {
+        const pos = nodePositions.get(node.id);
+        if (!pos) return;
+        
+        const { x, y, w, h } = pos;
+        
+        switch (node.type) {
+          case 'rect':
+            svg += `<rect x="${x - w/2}" y="${y - h/2}" width="${w}" height="${h}" rx="4" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+            break;
+          case 'roundRect':
+            svg += `<rect x="${x - w/2}" y="${y - h/2}" width="${w}" height="${h}" rx="20" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+            break;
+          case 'rounded':
+            svg += `<rect x="${x - w/2}" y="${y - h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+            break;
+          case 'circle':
+            const r = Math.max(w, h) / 2;
+            svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+            break;
+          case 'diamond':
+            const dw = w * 0.7, dh = h * 0.7;
+            svg += `<polygon points="${x},${y-dh} ${x+dw},${y} ${x},${y+dh} ${x-dw},${y}" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+            break;
+          default:
+            svg += `<rect x="${x - w/2}" y="${y - h/2}" width="${w}" height="${h}" rx="4" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+        }
+        
+        // Node label
+        svg += `<text x="${x}" y="${y + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif" font-weight="500">${escapeHtml(node.label)}</text>`;
+      });
+      
+      return svg;
+    }
+    
+    function parseFlowchartNode(str, patterns) {
+      str = str.trim();
+      if (!str) return null;
+      
+      // Extract ID and find node definition
+      let id = str;
+      let label = str;
+      let type = 'rect';
+      
+      for (const p of patterns) {
+        const match = str.match(p.regex);
+        if (match) {
+          label = match[1];
+          type = p.type;
+          // ID is the part before the bracket/paren
+          const bracketIndex = str.search(/[\[\(\{<]/);
+          id = bracketIndex > 0 ? str.substring(0, bracketIndex).trim() : label;
+          break;
+        }
+      }
+      
+      // If no pattern matched, check if it's just an ID
+      if (id === str && !str.match(/[\[\(\{]/)) {
+        return { id: str, label: str, type: 'rect' };
+      }
+      
+      return { id: id || label, label, type };
+    }
+    
+    function layoutFlowchartNodes(nodes, edges, direction, W, H, style) {
+      const positions = new Map();
+      
+      const nodeW = style.nodeWidth;
+      const nodeH = style.nodeHeight;
+      const gapX = style.gapX;
+      const gapY = style.gapY;
+      const startX = style.startX;
+      const startY = style.startY;
+      
+      // Build graph structure
+      const outgoing = new Map();  // node -> [targets]
+      const incoming = new Map();  // node -> [sources]
+      
+      nodes.forEach(n => {
+        outgoing.set(n.id, []);
+        incoming.set(n.id, []);
+      });
+      
+      edges.forEach(e => {
+        if (outgoing.has(e.from)) outgoing.get(e.from).push(e.to);
+        if (incoming.has(e.to)) incoming.get(e.to).push(e.from);
+      });
+      
+      // Find root nodes (no incoming edges)
+      const roots = nodes.filter(n => incoming.get(n.id).length === 0);
+      if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
+      
+      // BFS to assign levels
+      const levels = new Map();
+      const visited = new Set();
+      let queue = roots.map(r => ({ node: r, level: 0 }));
+      
+      while (queue.length > 0) {
+        const { node, level } = queue.shift();
+        if (visited.has(node.id)) continue;
+        visited.add(node.id);
+        levels.set(node.id, level);
+        
+        outgoing.get(node.id).forEach(targetId => {
+          const target = nodes.find(n => n.id === targetId);
+          if (target && !visited.has(targetId)) {
+            queue.push({ node: target, level: level + 1 });
+          }
+        });
+      }
+      
+      // Handle unvisited nodes
+      nodes.forEach(n => {
+        if (!levels.has(n.id)) levels.set(n.id, 0);
+      });
+      
+      // Group by level
+      const levelGroups = new Map();
+      nodes.forEach(n => {
+        const lvl = levels.get(n.id);
+        if (!levelGroups.has(lvl)) levelGroups.set(lvl, []);
+        levelGroups.get(lvl).push(n);
+      });
+      
+      // Calculate positions
+      const maxLevel = Math.max(...levels.values());
+      
+      const isHorizontal = direction === 'LR' || direction === 'RL';
+      const isReverse = direction === 'RL' || direction === 'BT';
+      
+      levelGroups.forEach((group, level) => {
+        const actualLevel = isReverse ? maxLevel - level : level;
+        
+        group.forEach((node, idx) => {
+          let x, y;
+          
+          if (isHorizontal) {
+            x = startX + actualLevel * (nodeW + gapX) + nodeW / 2;
+            const totalHeight = group.length * nodeH + (group.length - 1) * gapY;
+            const startYGroup = (H - totalHeight) / 2 + 50;
+            y = startYGroup + idx * (nodeH + gapY) + nodeH / 2;
+          } else {
+            const totalWidth = group.length * nodeW + (group.length - 1) * gapX;
+            const startXGroup = (W - totalWidth) / 2;
+            x = startXGroup + idx * (nodeW + gapX) + nodeW / 2;
+            y = startY + actualLevel * (nodeH + gapY) + nodeH / 2;
+          }
+          
+          positions.set(node.id, { x, y, w: nodeW, h: nodeH });
+        });
+      });
+      
+      return positions;
+    }
+    
+    function getEdgePoints(fromPos, toPos, direction) {
+      const { x: x1, y: y1, w: w1, h: h1 } = fromPos;
+      const { x: x2, y: y2, w: w2, h: h2 } = toPos;
+      
+      const isHorizontal = direction === 'LR' || direction === 'RL';
+      
+      if (isHorizontal) {
+        const startX = x1 < x2 ? x1 + w1/2 : x1 - w1/2;
+        const endX = x1 < x2 ? x2 - w2/2 - 5 : x2 + w2/2 + 5;
+        return [startX, y1, endX, y2];
+      } else {
+        const startY = y1 < y2 ? y1 + h1/2 : y1 - h1/2;
+        const endY = y1 < y2 ? y2 - h2/2 - 5 : y2 + h2/2 + 5;
+        return [x1, startY, x2, endY];
+      }
+    }
+
+    // Render sequence diagram
+    function renderSequence(sequenceConfig, colors, W, H) {
+      let svg = '';
+      
+      // Support both string and object format
+      let sequenceStr, style;
+      if (typeof sequenceConfig === 'string') {
+        sequenceStr = sequenceConfig;
+        style = {};
+      } else {
+        sequenceStr = sequenceConfig.content || sequenceConfig.chart || '';
+        style = sequenceConfig.style || {};
+      }
+      
+      // Style options
+      const participantWidth = style.participantWidth || 120;
+      const participantHeight = style.participantHeight || 50;
+      const messageGap = style.messageGap || 70;
+      const fontSize = style.fontSize || 18;
+      const startY = style.y || 220;
+      const marginX = style.marginX || 150;
+      
+      const lines = sequenceStr.trim().split('\n').map(l => l.trim()).filter(l => l);
+      
+      // Parse participants and messages
+      const participants = [];
+      const messages = [];
+      
+      // Message patterns
+      const msgPatterns = [
+        { regex: /^(.+?)\s*->>>\s*(.+?):\s*(.*)$/, type: 'async-reply' },
+        { regex: /^(.+?)\s*-->>>\s*(.+?):\s*(.*)$/, type: 'async-reply-dashed' },
+        { regex: /^(.+?)\s*->>\s*(.+?):\s*(.*)$/, type: 'async' },
+        { regex: /^(.+?)\s*-->>>\s*(.+?):\s*(.*)$/, type: 'reply-dashed' },
+        { regex: /^(.+?)\s*-->>\s*(.+?):\s*(.*)$/, type: 'reply' },
+        { regex: /^(.+?)\s*->\s*(.+?):\s*(.*)$/, type: 'sync' },
+        { regex: /^(.+?)\s*-->\s*(.+?):\s*(.*)$/, type: 'dashed' },
+        { regex: /^(.+?)\s*-x\s*(.+?):\s*(.*)$/, type: 'cross' },
+      ];
+      
+      lines.forEach(line => {
+        // Check for participant declaration
+        const partMatch = line.match(/^participant\s+(.+)$/i);
+        if (partMatch) {
+          const name = partMatch[1].trim();
+          if (!participants.includes(name)) participants.push(name);
+          return;
+        }
+        
+        // Check for message
+        for (const mp of msgPatterns) {
+          const match = line.match(mp.regex);
+          if (match) {
+            const from = match[1].trim();
+            const to = match[2].trim();
+            const text = match[3].trim();
+            
+            if (!participants.includes(from)) participants.push(from);
+            if (!participants.includes(to)) participants.push(to);
+            
+            messages.push({ from, to, text, type: mp.type });
+            break;
+          }
+        }
+      });
+      
+      // Layout
+      const totalW = participants.length * participantWidth + (participants.length - 1) * 80;
+      const startX = Math.max(marginX, (W - totalW) / 2);
+      const gap = (W - 2 * marginX) / Math.max(participants.length - 1, 1);
+      
+      // Participant positions
+      const partPositions = new Map();
+      participants.forEach((p, i) => {
+        const x = participants.length === 1 ? W / 2 : startX + i * gap;
+        partPositions.set(p, x);
+      });
+      
+      // Arrow markers
+      svg += `<defs>
+        <marker id="seq-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="${colors.accent}"/>
+        </marker>
+        <marker id="seq-arrow-open" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polyline points="0 0, 8 3, 0 6" fill="none" stroke="${colors.accent}" stroke-width="1.5"/>
+        </marker>
+        <marker id="seq-cross" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <line x1="2" y1="2" x2="8" y2="8" stroke="${colors.accent}" stroke-width="2"/>
+          <line x1="8" y1="2" x2="2" y2="8" stroke="${colors.accent}" stroke-width="2"/>
+        </marker>
+      </defs>`;
+      
+      // Draw lifelines
+      const lifelineEndY = startY + participantHeight + messages.length * messageGap + 50;
+      participants.forEach(p => {
+        const x = partPositions.get(p);
+        svg += `<line x1="${x}" y1="${startY + participantHeight}" x2="${x}" y2="${lifelineEndY}" stroke="${colors.muted}" stroke-width="2" stroke-dasharray="8,4"/>`;
+      });
+      
+      // Draw participant boxes (top)
+      participants.forEach(p => {
+        const x = partPositions.get(p);
+        svg += `<rect x="${x - participantWidth/2}" y="${startY}" width="${participantWidth}" height="${participantHeight}" rx="6" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+        svg += `<text x="${x}" y="${startY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(p)}</text>`;
+      });
+      
+      // Draw messages
+      messages.forEach((msg, i) => {
+        const fromX = partPositions.get(msg.from);
+        const toX = partPositions.get(msg.to);
+        const y = startY + participantHeight + 40 + i * messageGap;
+        
+        const isSelf = msg.from === msg.to;
+        const isDashed = msg.type.includes('dashed') || msg.type === 'reply';
+        const isOpen = msg.type.includes('async') || msg.type.includes('reply');
+        const isCross = msg.type === 'cross';
+        
+        let marker = 'seq-arrow';
+        if (isOpen) marker = 'seq-arrow-open';
+        if (isCross) marker = 'seq-cross';
+        
+        if (isSelf) {
+          // Self message (loop)
+          const loopW = 50;
+          svg += `<path d="M ${fromX} ${y} h ${loopW} v 30 h -${loopW}" fill="none" stroke="${colors.accent}" stroke-width="2" ${isDashed ? 'stroke-dasharray="6,3"' : ''} marker-end="url(#${marker})"/>`;
+          svg += `<text x="${fromX + loopW + 10}" y="${y + 15}" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(msg.text)}</text>`;
+        } else {
+          const direction = toX > fromX ? 1 : -1;
+          svg += `<line x1="${fromX}" y1="${y}" x2="${toX - direction * 5}" y2="${y}" stroke="${colors.accent}" stroke-width="2" ${isDashed ? 'stroke-dasharray="6,3"' : ''} marker-end="url(#${marker})"/>`;
+          
+          // Message text
+          const textX = (fromX + toX) / 2;
+          svg += `<text x="${textX}" y="${y - 10}" text-anchor="middle" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(msg.text)}</text>`;
+        }
+      });
+      
+      // Draw participant boxes (bottom)
+      participants.forEach(p => {
+        const x = partPositions.get(p);
+        svg += `<rect x="${x - participantWidth/2}" y="${lifelineEndY}" width="${participantWidth}" height="${participantHeight}" rx="6" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
+        svg += `<text x="${x}" y="${lifelineEndY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(p)}</text>`;
+      });
       
       return svg;
     }
@@ -2173,11 +3784,11 @@
 
     // Sample
     function loadSample() {
-      const sample = `# FrameNote v0.3 Sample - Templates & Themes Demo
+      const sample = `# FrameNote v0.4 Sample - Templates & Themes Demo
 meta:
   project: FrameNote Templates
   author: FrameNote Team
-  version: "0.3"
+  version: "0.4"
   date: "2025-01-01"
   # Theme can be set here (or use UI selector)
   # Options: default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
@@ -2202,7 +3813,7 @@ meta:
 slides:
   # Title Template
   - template: title
-    title: "FrameNote v0.3"
+    title: "FrameNote v0.4"
     subtitle: "Templates & Themes"
     author: "FrameNote Team"
     date: "2025"
@@ -2275,6 +3886,103 @@ slides:
           - 開発
           - リリース
 
+  # Table (Markdown format)
+  - title: 機能一覧
+    body:
+      table: |
+        | 機能 | 説明 | 状態 |
+        |:-----|:----:|-----:|
+        | テンプレート | 8種類のスライドテンプレート | ✅ |
+        | テーマ | 10種類のカラーテーマ | ✅ |
+        | エクスポート | PDF / PPTX / HTML | ✅ |
+        | テーブル | Markdown形式のテーブル | ✅ |
+      tableStyle:
+        colWidths: [200, 450, 100]
+        rowHeight: 52
+
+  # Code Block
+  - title: コードブロック
+    body:
+      code:
+        language: python
+        content: |
+          def fibonacci(n):
+              """Calculate fibonacci number"""
+              if n <= 1:
+                  return n
+              return fibonacci(n-1) + fibonacci(n-2)
+          
+          # Print first 10 numbers
+          for i in range(10):
+              print(fibonacci(i))
+        style:
+          theme: match  # dark, light, or match (テーマに合わせた配色)
+
+  # Math Equation
+  - title: 数式
+    body:
+      text:
+        - "アインシュタインの式 $E = mc^2$ は有名です"
+        - "ピタゴラスの定理: $a^2 + b^2 = c^2$"
+        - "力の法則: $F = ma$"
+
+  # Shapes
+  - title: 図形描画
+    body:
+      shapes:
+        - type: rect
+          x: 200
+          y: 250
+          width: 180
+          height: 120
+          fill: "#3b82f6"
+          rx: 8
+          label: "入力"
+        - type: arrow
+          x: 400
+          y: 310
+          x2: 550
+          y2: 310
+          strokeWidth: 3
+        - type: circle
+          x: 680
+          y: 310
+          r: 70
+          fill: "#10b981"
+          label: "処理"
+        - type: arrow
+          x: 770
+          y: 310
+          x2: 920
+          y2: 310
+          strokeWidth: 3
+        - type: diamond
+          x: 1050
+          y: 310
+          size: 140
+          fill: "#f59e0b"
+          label: "出力"
+
+  # Flowchart (Mermaid-style)
+  - title: フローチャート
+    body:
+      flowchart: |
+        direction: LR
+        A[開始] --> B(入力処理)
+        B --> C{検証}
+        C -->|OK| D[保存]
+        C -->|NG| B
+        D --> E[終了]
+
+  # Sequence Diagram
+  - title: シーケンス図
+    body:
+      sequence: |
+        Client ->> Server: HTTPリクエスト
+        Server ->> DB: クエリ実行
+        DB -->> Server: 結果返却
+        Server -->> Client: JSONレスポンス
+
   # Q&A Template
   - template: qa
     title: "ご質問はありますか？"
@@ -2345,7 +4053,7 @@ slides:
         pdf.setProperties({
           title: meta.project || 'Presentation',
           author: meta.author || 'FrameNote',
-          creator: 'FrameNote v0.3'
+          creator: 'FrameNote v0.4'
         });
 
         // Download
@@ -2398,7 +4106,7 @@ slides:
         // Set presentation properties
         pptx.author = meta.author || 'FrameNote';
         pptx.title = meta.project || 'Presentation';
-        pptx.subject = 'Created with FrameNote v0.3';
+        pptx.subject = 'Created with FrameNote v0.4';
         
         // Use standard 16:9 layout (13.33" x 7.5")
         pptx.layout = 'LAYOUT_16x9';
@@ -2699,6 +4407,8 @@ slides:
       const titleHex = colors.title.replace('#', '');
       const textHex = colors.text.replace('#', '');
       const bulletHex = colors.bullet.replace('#', '');
+      const accentHex = colors.accent.replace('#', '');
+      const bgHex = colors.background.replace('#', '');
 
       // Title
       if (data.title) {
@@ -2713,7 +4423,60 @@ slides:
         const body = data.body;
         const text = body.text;
         
-        if (body.diagram) {
+        if (body.table) {
+          // Table (Markdown format)
+          const { headers, rows, aligns } = parseMarkdownTable(body.table);
+          if (headers.length > 0) {
+            const tableStyle = body.tableStyle || {};
+            const headerBgHex = (tableStyle.headerBg || colors.accent).replace('#', '');
+            const headerColorHex = (tableStyle.headerColor || colors.background).replace('#', '');
+            
+            const tableData = [
+              headers.map((h, colIdx) => ({ 
+                text: h, 
+                options: { 
+                  bold: true, 
+                  color: headerColorHex, 
+                  fill: { color: headerBgHex },
+                  align: 'center'  // headers always centered
+                } 
+              })),
+              ...rows.map((row, i) => row.map((cell, colIdx) => ({ 
+                text: cell.replace(/\*\*/g, ''), 
+                options: { 
+                  color: textHex,
+                  fill: tableStyle.striped !== false && i % 2 === 1 ? { color: accentHex, transparency: 95 } : undefined,
+                  align: aligns[colIdx] || 'left'
+                } 
+              })))
+            ];
+            
+            // Calculate column widths for PPTX (convert pixels to inches, roughly /96)
+            let pptxColWidths;
+            if (tableStyle.colWidths && Array.isArray(tableStyle.colWidths)) {
+              pptxColWidths = tableStyle.colWidths.map(w => w / 96);
+            }
+            
+            const tableOptions = {
+              x: 0.5, y: 1.3,
+              fontSize: tableStyle.fontSize ? tableStyle.fontSize * 0.5 : 14,
+              border: { pt: 0.5, color: '999999' },
+              valign: 'middle'
+            };
+            
+            if (pptxColWidths) {
+              tableOptions.colW = pptxColWidths;
+            } else {
+              tableOptions.w = 9;
+            }
+            
+            if (tableStyle.rowHeight) {
+              tableOptions.rowH = tableStyle.rowHeight / 96;
+            }
+            
+            slide.addTable(tableData, tableOptions);
+          }
+        } else if (body.diagram) {
           // Diagram
           const boxes = body.diagram.boxes || [];
           const boxW = 1.5;
@@ -2741,6 +4504,119 @@ slides:
             }
             
             x += boxW + gap;
+          });
+        } else if (body.code) {
+          // Code block
+          const codeConfig = body.code;
+          const content = typeof codeConfig === 'string' ? codeConfig : codeConfig.content || '';
+          const language = codeConfig.language || '';
+          const codeStyle = codeConfig.style || {};
+          const lines = content.split('\n');
+          
+          // Helper functions for color manipulation
+          function adjustColorHex(hex, amount) {
+            hex = hex.replace('#', '');
+            const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+            const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+            const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+            return [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+          }
+          
+          function blendColorsHex(hex1, hex2, ratio) {
+            hex1 = hex1.replace('#', '');
+            hex2 = hex2.replace('#', '');
+            const r = Math.round(parseInt(hex1.substr(0, 2), 16) * (1 - ratio) + parseInt(hex2.substr(0, 2), 16) * ratio);
+            const g = Math.round(parseInt(hex1.substr(2, 2), 16) * (1 - ratio) + parseInt(hex2.substr(2, 2), 16) * ratio);
+            const b = Math.round(parseInt(hex1.substr(4, 2), 16) * (1 - ratio) + parseInt(hex2.substr(4, 2), 16) * ratio);
+            return [r, g, b].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
+          }
+          
+          function getBrightnessHex(hex) {
+            hex = hex.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            return (r * 299 + g * 587 + b * 114) / 1000;
+          }
+          
+          // Determine background color
+          let codeBgHex, codeTextHex;
+          const themeBgHex = bgHex;
+          const isLightTheme = getBrightnessHex(themeBgHex) > 128;
+          
+          if (codeStyle.theme === 'match') {
+            // Match theme colors
+            if (isLightTheme) {
+              codeBgHex = blendColorsHex(themeBgHex, accentHex, 0.08);
+              codeBgHex = adjustColorHex(codeBgHex, -30);
+              codeTextHex = adjustColorHex(themeBgHex, -180);
+            } else {
+              codeBgHex = blendColorsHex(themeBgHex, accentHex, 0.15);
+              codeBgHex = adjustColorHex(codeBgHex, -20);
+              codeTextHex = adjustColorHex(themeBgHex, 180);
+            }
+          } else if (codeStyle.background) {
+            codeBgHex = codeStyle.background.replace('#', '');
+            const brightness = getBrightnessHex(codeBgHex);
+            codeTextHex = brightness > 128 ? '1e293b' : 'e0e0e0';
+          } else if (codeStyle.theme === 'light') {
+            codeBgHex = 'f8fafc';
+            codeTextHex = '1e293b';
+          } else {
+            codeBgHex = '1e293b';
+            codeTextHex = 'e0e0e0';
+          }
+          
+          // Background for code
+          slide.addShape('roundRect', {
+            x: 0.5, y: 1.2, w: 9, h: Math.min(lines.length * 0.3 + 0.4, 4),
+            fill: { color: codeBgHex },
+            line: { color: '334155', width: 1 }
+          });
+          
+          // Language badge
+          if (language) {
+            slide.addText(language, {
+              x: 8.5, y: 1.2, w: 1, h: 0.3,
+              fontSize: 10, color: 'ffffff', fill: { color: accentHex },
+              align: 'center', valign: 'middle'
+            });
+          }
+          
+          // Code text (monospace)
+          const codeText = lines.map((line, i) => ({
+            text: (i + 1).toString().padStart(3) + '  ' + line + '\n',
+            options: { fontFace: 'Consolas', fontSize: 11, color: codeTextHex }
+          }));
+          
+          slide.addText(codeText, {
+            x: 0.6, y: 1.4, w: 8.8, h: Math.min(lines.length * 0.3, 3.6),
+            valign: 'top'
+          });
+        } else if (body.math) {
+          // Math equation - display as text (LaTeX source)
+          const mathConfig = body.math;
+          const formula = typeof mathConfig === 'string' ? mathConfig : mathConfig.formula || mathConfig;
+          const mathStyle = body.mathStyle || {};
+          const fontSize = mathStyle.fontSize ? mathStyle.fontSize * 0.5 : 24;
+          const align = mathStyle.align || 'center';
+          
+          // Display formula text
+          slide.addText(formula, {
+            x: 0.5, y: 2, w: 9, h: 1,
+            fontSize: fontSize,
+            color: textHex,
+            fontFace: 'Cambria Math',
+            align: align,
+            valign: 'middle'
+          });
+          
+          // Add note about math rendering
+          slide.addText('(LaTeX: ' + formula.substring(0, 50) + (formula.length > 50 ? '...' : '') + ')', {
+            x: 0.5, y: 3.2, w: 9, h: 0.4,
+            fontSize: 10,
+            color: '888888',
+            align: 'center'
           });
         } else if (typeof text === 'string') {
           slide.addText(text, {
@@ -2814,6 +4690,7 @@ slides:
 '  <meta charset="UTF-8">\n' +
 '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
 '  <title>' + escapeHtml(meta.project || 'Presentation') + ' - FrameNote</title>\n' +
+'  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">\n' +
 '  <style>\n' +
 '    * { margin: 0; padding: 0; box-sizing: border-box; }\n' +
 '    body {\n' +

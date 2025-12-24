@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### Detailed Specification v0.2 (FrameNote)
+### Detailed Specification v0.4 (FrameNote)
 
 ---
 
@@ -90,14 +90,71 @@ meta:
   project: string
   author: string
   date: string
-  theme: string
+  version: string
+  theme: ThemeName
+  header: HeaderObject
+  footer: FooterObject
 ```
 
-### 5.2 Constraints
+### 5.2 theme (ThemeName)
+
+Available values:
+
+| Theme | Description |
+|-------|-------------|
+| `default` | White background, indigo accent |
+| `corporate` | White background, blue accent |
+| `minimal` | Gray background, slate accent |
+| `dark` | Dark background, cyan accent |
+| `nature` | Green-tinted background, green accent |
+| `sunset` | Orange-tinted background, orange accent |
+| `ocean` | Blue-tinted background, sky accent |
+| `lavender` | Purple-tinted background, purple accent |
+| `rose` | Pink-tinted background, rose accent |
+| `midnight` | Navy background, violet accent |
+
+### 5.3 header (HeaderObject)
+
+```yaml
+header:
+  show: boolean
+  text: string
+  format:
+    color: string
+    size: number
+    background: string
+```
+
+### 5.4 footer (FooterObject)
+
+```yaml
+footer:
+  show: boolean
+  left: string
+  center: string
+  right: string
+  format:
+    color: string
+    size: number
+    background: string
+```
+
+### 5.5 Placeholders
+
+The following placeholders can be used in header/footer text:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{project}` | Project name |
+| `{author}` | Author name |
+| `{date}` | Date |
+| `{page}` | Current page number |
+| `{total}` | Total page count |
+
+### 5.6 Constraints
 
 * `meta` is **excluded from structural validation**
-* It may be used as **shared metadata** (headers, footers, etc.)
-  across CLI / Browser / IDE implementations
+* It may be used as **shared metadata** across implementations
 * It does **not affect the semantic interpretation** of slide content
 
 ---
@@ -127,13 +184,54 @@ slides:
 
 ```yaml
 - title: string
+  subtitle: string
+  template: TemplateName
   body: Body
+  format: FormatObject
+  notes: string
 ```
 
 ### 7.2 Required Keys
 
 * `title`
+
+### 7.3 Optional Keys
+
+* `subtitle`
+* `template`
 * `body`
+* `format`
+* `notes`
+
+### 7.4 template (TemplateName)
+
+| Template | Description | Required Keys |
+|----------|-------------|---------------|
+| `title` | Title slide | title, subtitle, author, date |
+| `section` | Section divider | title, subtitle |
+| `quote` | Quotation | quote, author |
+| `qa` | Q&A slide | title, contact |
+| `thanks` | Closing slide | title, message, contact |
+| `agenda` | Agenda/TOC | title, items |
+| `comparison` | Two-column comparison | title, left, right |
+| `timeline` | Timeline events | title, events |
+
+### 7.5 format (FormatObject)
+
+```yaml
+format:
+  title:
+    size: number
+    color: string
+    weight: string
+  subtitle:
+    size: number
+    color: string
+  text:
+    size: number
+    color: string
+  background: string
+```
 
 ---
 
@@ -143,7 +241,7 @@ slides:
 
 ---
 
-### 8.1 Basic Form (text)
+### 8.1 text (TextContent)
 
 ```yaml
 body:
@@ -155,26 +253,347 @@ body:
 * `string` : a single paragraph
 * `string[]` : a logical list (bullet points)
 
+#### Inline Math
+
+Text may contain inline math expressions using `$...$` syntax:
+
+```yaml
+text:
+  - "Einstein's equation: $E = mc^2$"
+  - "Area of circle: $S = \\pi r^2$"
+```
+
 ---
 
-### 8.2 With Figure (figure)
+### 8.2 figure (FigureContent)
 
 ```yaml
 body:
-  figure:
-    src: string
-    caption: string
-  text: string | string[]
+  figure: string
+  caption: string
+  style: figure_caption | figure_bullets
+  text: string[]
 ```
 
 #### Constraints
 
-* If `figure` is specified, `text` is mandatory
+* `figure` specifies image filename or URL
+* `style` determines layout mode
 * At most **one figure per slide** is allowed
 
 ---
 
-### 8.3 Emphasis / Auxiliary Information (note)
+### 8.3 table (TableContent)
+
+```yaml
+body:
+  table: string
+  tableStyle: TableStyleObject
+```
+
+#### Table Format
+
+Markdown table syntax:
+
+```yaml
+table: |
+  | Header 1 | Header 2 | Header 3 |
+  |:---------|:--------:|----------:|
+  | Left     | Center   | Right     |
+```
+
+#### Column Alignment
+
+| Syntax | Alignment |
+|--------|-----------|
+| `:---` | Left |
+| `:---:` | Center |
+| `---:` | Right |
+| `---` | Left (default) |
+
+#### tableStyle (TableStyleObject)
+
+```yaml
+tableStyle:
+  colWidths: number[]      # Column widths in pixels
+  rowHeight: number        # Row height in pixels
+  headerBg: string         # Header background color
+  headerColor: string      # Header text color
+  striped: boolean         # Alternating row colors
+  border: boolean          # Show borders
+  fontSize: number         # Font size
+  x: number                # X position
+  y: number                # Y position
+```
+
+---
+
+### 8.4 code (CodeContent)
+
+```yaml
+body:
+  code:
+    language: LanguageName
+    content: string
+    lineNumbers: boolean
+    fontSize: number
+    style:
+      theme: CodeTheme
+      background: string
+```
+
+#### language (LanguageName)
+
+Supported values:
+
+* `javascript`
+* `python`
+* `java`
+* `rust`
+* `go`
+* `yaml`
+* `sql`
+* `html`
+* `css`
+* `bash`
+* `text`
+
+#### style.theme (CodeTheme)
+
+| Value | Description |
+|-------|-------------|
+| `dark` | Dark background (default) |
+| `light` | Light background |
+| `match` | Colors derived from slide theme |
+
+---
+
+### 8.5 math (MathContent)
+
+```yaml
+body:
+  math: string | string[]
+  mathStyle: MathStyleObject
+```
+
+#### Semantics
+
+* `string` : single equation
+* `string[]` : multiple equations
+
+#### mathStyle (MathStyleObject)
+
+```yaml
+mathStyle:
+  fontSize: number         # Font size (default: 36)
+  align: left | center | right
+  lineSpacing: number      # Line spacing multiplier (default: 1.2)
+```
+
+#### LaTeX Syntax
+
+Full KaTeX LaTeX syntax is supported. Examples:
+
+| Syntax | Description |
+|--------|-------------|
+| `x^2` | Superscript |
+| `x_i` | Subscript |
+| `\frac{a}{b}` | Fraction |
+| `\sqrt{x}` | Square root |
+| `\sum_{i=1}^{n}` | Summation |
+| `\int_{a}^{b}` | Integral |
+| `\alpha, \beta, \gamma` | Greek letters |
+| `\begin{pmatrix}...\end{pmatrix}` | Matrix |
+
+---
+
+### 8.6 shapes (ShapesContent)
+
+```yaml
+body:
+  shapes:
+    - ShapeObject
+    - ShapeObject
+    - ...
+```
+
+#### ShapeObject
+
+```yaml
+- type: ShapeType
+  x: number
+  y: number
+  width: number
+  height: number
+  r: number
+  rx: number
+  ry: number
+  x2: number
+  y2: number
+  size: number
+  points: string
+  d: string
+  fill: string
+  stroke: string
+  strokeWidth: number
+  opacity: number
+  label: string
+  labelColor: string
+  labelSize: number
+```
+
+#### type (ShapeType)
+
+| Type | Required Properties | Description |
+|------|---------------------|-------------|
+| `rect` | x, y, width, height | Rectangle |
+| `circle` | x, y, r | Circle |
+| `ellipse` | x, y, rx, ry | Ellipse |
+| `line` | x, y, x2, y2 | Line |
+| `arrow` | x, y, x2, y2 | Arrow |
+| `diamond` | x, y, size | Diamond |
+| `triangle` | x, y, width, height | Triangle |
+| `polygon` | points | Polygon |
+| `polyline` | points | Polyline |
+| `path` | d | SVG path |
+| `text` | x, y, label | Text |
+| `group` | children, transform | Group |
+
+---
+
+### 8.7 flowchart (FlowchartContent)
+
+```yaml
+body:
+  flowchart: string | FlowchartObject
+```
+
+#### String Format
+
+```yaml
+flowchart: |
+  direction: LR
+  A[Start] --> B(Process)
+  B --> C{Decision}
+  C -->|Yes| D[End]
+  C -->|No| B
+```
+
+#### Object Format
+
+```yaml
+flowchart:
+  content: string
+  style:
+    nodeWidth: number
+    nodeHeight: number
+    fontSize: number
+    gapX: number
+    gapY: number
+    x: number
+    y: number
+```
+
+#### Node Shapes
+
+| Syntax | Shape |
+|--------|-------|
+| `[text]` | Rectangle |
+| `(text)` | Rounded rectangle |
+| `{text}` | Diamond |
+| `((text))` | Circle |
+| `[[text]]` | Stadium |
+
+#### Arrow Types
+
+| Syntax | Description |
+|--------|-------------|
+| `-->` | Arrow |
+| `-->｜label｜` | Labeled arrow |
+| `-.->` | Dashed arrow |
+| `===>` | Thick arrow |
+| `---` | Line (no arrow) |
+
+#### Direction
+
+| Value | Description |
+|-------|-------------|
+| `LR` | Left to Right (default) |
+| `RL` | Right to Left |
+| `TB` | Top to Bottom |
+| `BT` | Bottom to Top |
+
+---
+
+### 8.8 sequence (SequenceContent)
+
+```yaml
+body:
+  sequence: string | SequenceObject
+```
+
+#### String Format
+
+```yaml
+sequence: |
+  Client ->> Server: Request
+  Server ->> DB: Query
+  DB -->> Server: Result
+  Server -->> Client: Response
+```
+
+#### Object Format
+
+```yaml
+sequence:
+  content: string
+  style:
+    participantWidth: number
+    participantHeight: number
+    messageGap: number
+    fontSize: number
+    marginX: number
+    y: number
+```
+
+#### Participant Declaration
+
+```yaml
+sequence: |
+  participant Alice
+  participant Bob
+  Alice ->> Bob: Hello
+```
+
+#### Arrow Types
+
+| Syntax | Description |
+|--------|-------------|
+| `->>` | Async message |
+| `-->>` | Reply (dashed) |
+| `->` | Sync message |
+| `-->` | Dashed line |
+| `-x` | Failed/crossed |
+
+---
+
+### 8.9 diagram (DiagramContent)
+
+```yaml
+body:
+  diagram:
+    type: box-arrow
+    boxes:
+      - string
+      - string
+      - ...
+```
+
+Simple box-arrow flow diagram.
+
+---
+
+### 8.10 note (NoteContent)
 
 ```yaml
 body:
@@ -270,10 +689,10 @@ type Issue = {
 
 ### 11.2 Classification
 
-| Prefix | Type               |
-| ------ | ------------------ |
-| PDL-E  | Error (fatal)      |
-| PDL-W  | Warning (nonfatal) |
+| Prefix | Type |
+|--------|------|
+| PDL-E | Error (fatal) |
+| PDL-W | Warning (nonfatal) |
 
 ---
 
@@ -285,6 +704,7 @@ Examples:
 
 * `slides[2].title`
 * `slides[0].body.figure`
+* `slides[1].body.flowchart`
 
 ---
 
@@ -295,6 +715,7 @@ PDL does **not directly specify layout**, but the following can be derived inter
 * Estimated line count
 * Figure-to-text ratio
 * Information density
+* Diagram complexity
 
 These are used for **warning generation and renderer decisions**.
 
@@ -305,8 +726,8 @@ These are used for **warning generation and renderer decisions**.
 PDL does not define:
 
 * Fonts
-* Colors
-* Exact coordinates
+* Colors (except as hints)
+* Exact coordinates (except for shapes)
 * Animations
 
 These are the responsibility of the **Renderer**.
@@ -315,11 +736,11 @@ These are the responsibility of the **Renderer**.
 
 ## 15. Relationship with CLI / Browser / IDE
 
-| Environment | Responsibility                  |
-| ----------- | ------------------------------- |
-| CLI         | Final generation / CI           |
-| Browser     | Authoring / validation          |
-| IDE         | Persistent linting / completion |
+| Environment | Responsibility |
+|-------------|----------------|
+| CLI | Final generation / CI |
+| Browser | Authoring / validation |
+| IDE | Persistent linting / completion |
 
 All must use the **same PDL core**.
 
@@ -333,6 +754,9 @@ The following are reserved for future versions:
 * Section structures
 * Conditional slides
 * Metadata extensions
+* Custom themes
+* Animation definitions
+* Subgraph support in flowcharts
 
 ---
 
@@ -341,14 +765,14 @@ The following are reserved for future versions:
 * PDL v0.x: Experimental
 * PDL v1.0: Backward compatibility guaranteed
 
-FrameNote v0.2 conforms to **PDL v0.2**.
+FrameNote v0.4 conforms to **PDL v0.4**.
 
 ---
 
 ## 18. Summary (Normative Statement)
 
 > PDL treats presentations
-> not as something to be “drawn”,
+> not as something to be "drawn",
 > but as documents that can be
 > **designed, validated, and reasoned about**.
 
@@ -359,6 +783,7 @@ FrameNote v0.2 conforms to **PDL v0.2**.
 ```yaml
 meta:
   project: Example
+  theme: default
 
 slides:
   - title: Purpose
@@ -368,3 +793,109 @@ slides:
         - Align assumptions
 ```
 
+---
+
+## Appendix B: Full Feature Example
+
+```yaml
+meta:
+  project: PDL Demo
+  author: FrameNote Team
+  date: "2025"
+  theme: default
+  footer:
+    show: true
+    left: "{author}"
+    right: "{page} / {total}"
+
+slides:
+  # Title slide
+  - template: title
+    title: "PDL v0.4 Demo"
+    subtitle: "Presentation Description Language"
+    author: "FrameNote"
+    date: "2025"
+
+  # Table example
+  - title: "Table Example"
+    body:
+      table: |
+        | Feature | Status |
+        |:--------|:------:|
+        | Tables  | ✅     |
+        | Code    | ✅     |
+        | Math    | ✅     |
+      tableStyle:
+        colWidths: [300, 150]
+
+  # Code example
+  - title: "Code Example"
+    body:
+      code:
+        language: python
+        content: |
+          def hello(name):
+              return f"Hello, {name}!"
+        style:
+          theme: dark
+
+  # Math example
+  - title: "Math Equations"
+    body:
+      math:
+        - "E = mc^2"
+        - "F = ma"
+      mathStyle:
+        fontSize: 48
+        align: center
+
+  # Flowchart example
+  - title: "Flowchart"
+    body:
+      flowchart: |
+        direction: LR
+        A[Start] --> B(Process)
+        B --> C{Decision}
+        C -->|Yes| D[End]
+        C -->|No| B
+
+  # Sequence diagram example
+  - title: "Sequence Diagram"
+    body:
+      sequence: |
+        Client ->> Server: Request
+        Server -->> Client: Response
+```
+
+---
+
+## Appendix C: Changelog
+
+### v0.4
+
+* Added `table` with Markdown format and alignment
+* Added `tableStyle` for table customization
+* Added `code` with syntax highlighting
+* Added code themes (dark/light/match)
+* Added `math` with KaTeX support
+* Added inline math in text (`$...$`)
+* Added `mathStyle` for math customization
+* Added `shapes` for SVG primitives
+* Added `flowchart` with Mermaid-style syntax
+* Added `sequence` for sequence diagrams
+* Added flowchart/sequence sizing options
+* Added 8 slide templates
+* Added 10 preset themes
+* Added header/footer with placeholders
+
+### v0.3
+
+* Added FormatObject for per-slide styling
+* Added header/footer system
+* Added image management
+
+### v0.2
+
+* Initial PDL specification
+* Basic slide structure
+* Theme system
