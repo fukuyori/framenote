@@ -12,6 +12,7 @@ FrameNote is a declarative slide presentation tool using PDL (Presentation Descr
 - **Monaco Editor** - Syntax highlighting, code completion, snippets
 - **Real-time preview** - Instant visual feedback
 - **10 Themes** - default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
+- **7 Font Presets** - sans, serif, rounded, business, modern, elegant, handwritten (Google Fonts)
 
 ### Templates (8 types)
 - `title` - Title slide with subtitle, author, date
@@ -199,6 +200,35 @@ slides:
 | rose | Pink tint | Rose |
 | midnight | Navy | Violet |
 
+## Fonts
+
+### Preset Fonts
+
+| Preset | Heading | Body | Description |
+|--------|---------|------|-------------|
+| sans | Noto Sans JP | Noto Sans JP | Standard gothic |
+| serif | Noto Serif JP | Noto Serif JP | Formal mincho |
+| rounded | M PLUS Rounded 1c | M PLUS 1p | Casual rounded |
+| business | BIZ UDGothic | BIZ UDGothic | Business docs |
+| modern | Montserrat | Noto Sans JP | Modern style |
+| elegant | Playfair Display | Shippori Mincho | Elegant style |
+| handwritten | Klee One | Klee One | Handwritten style |
+
+### Usage
+
+```yaml
+# Preset (simple)
+meta:
+  font: modern
+
+# Custom fonts
+meta:
+  font:
+    heading: "Montserrat"
+    body: "Noto Sans JP"
+    code: "Fira Code"
+```
+
 ## Keyboard Shortcuts
 
 | Key | Action |
@@ -229,7 +259,11 @@ MIT License
 
 ## Changelog
 
-### v0.4 (Current)
+### v0.4.1 (Current)
+- Fixed font selector dropdown not working
+- Improved font selection UI/PDL synchronization
+
+### v0.4
 - Table column alignment (left/center/right)
 - Auto column width calculation
 - Custom tableStyle (colWidths, rowHeight)
@@ -241,6 +275,7 @@ MIT License
 - Mermaid-style flowcharts
 - Sequence diagrams
 - Flowchart/Sequence sizing options
+- Font selection (7 presets + custom Google Fonts)
 
 ### v0.3
 - 8 slide templates

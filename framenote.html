@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrameNote v0.4 - Text-First Slide Tool</title>
+  <title>FrameNote v0.4.1 - Text-First Slide Tool</title>
   <!-- Load all libraries BEFORE Monaco's AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -15,7 +15,8 @@
   <!-- Monaco loader MUST be loaded last to avoid AMD conflicts -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1p:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&family=BIZ+UDGothic:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Klee+One:wght@400;600&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&family=Fira+Code:wght@400;500&family=Source+Code+Pro:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-dark: #0f0f0f;
@@ -139,7 +140,7 @@
       color: var(--text-secondary);
     }
 
-    #theme-select {
+    #theme-select, #font-select {
       padding: 6px 24px 6px 10px;
       border-radius: 4px;
       border: 1px solid var(--border);
@@ -157,16 +158,16 @@
       appearance: none;
     }
 
-    #theme-select:hover {
+    #theme-select:hover, #font-select:hover {
       border-color: var(--text-muted);
     }
 
-    #theme-select:focus {
+    #theme-select:focus, #font-select:focus {
       outline: none;
       border-color: var(--accent);
     }
 
-    #theme-select option {
+    #theme-select option, #font-select option {
       background: var(--bg-panel);
       color: var(--text-primary);
       padding: 8px;
@@ -532,16 +533,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px;
+      padding: 20px;
+      cursor: none;
+    }
+
+    .slideshow-content:hover {
+      cursor: default;
     }
 
     .slideshow-slide {
       width: 100%;
-      max-width: 1200px;
+      height: 100%;
+      max-width: calc((100vh - 40px) * 16 / 9);
+      max-height: calc(100vw * 9 / 16);
       aspect-ratio: 16 / 9;
       background: white;
-      border-radius: 8px;
+      border-radius: 4px;
       overflow: hidden;
+      box-shadow: 0 0 60px rgba(0,0,0,0.8);
     }
 
     .slideshow-slide svg {
@@ -550,11 +559,39 @@
     }
 
     .slideshow-controls {
-      padding: 20px;
+      padding: 15px;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 16px;
+      background: rgba(0,0,0,0.9);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .slideshow-modal.fullscreen .slideshow-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    .slideshow-modal.fullscreen:hover .slideshow-controls,
+    .slideshow-modal.fullscreen .slideshow-controls:focus-within {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .slideshow-modal.fullscreen .slideshow-content {
+      padding: 0;
+    }
+
+    .slideshow-modal.fullscreen .slideshow-slide {
+      max-width: calc(100vh * 16 / 9);
+      max-height: 100vh;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     .slideshow-btn {
@@ -638,7 +675,7 @@
   <header class="header">
     <div class="logo">
       <div class="logo-icon">F</div>
-      <h1>FrameNote <span class="logo-version">v0.3</span></h1>
+      <h1>FrameNote <span class="logo-version">v0.4.1</span></h1>
     </div>
     <div class="header-actions">
       <div class="theme-selector">
@@ -654,6 +691,18 @@
           <option value="lavender">Lavender</option>
           <option value="rose">Rose</option>
           <option value="midnight">Midnight</option>
+        </select>
+      </div>
+      <div class="theme-selector">
+        <label for="font-select">Font:</label>
+        <select id="font-select">
+          <option value="sans">ゴシック (Noto Sans JP)</option>
+          <option value="serif">明朝 (Noto Serif JP)</option>
+          <option value="rounded">丸ゴシック (M PLUS Rounded)</option>
+          <option value="business">ビジネス (BIZ UDGothic)</option>
+          <option value="modern">モダン (Montserrat + Noto)</option>
+          <option value="elegant">エレガント (Playfair + Shippori)</option>
+          <option value="handwritten">手書き風 (Klee One)</option>
         </select>
       </div>
       <button class="btn" onclick="openProject()">📂 Open</button>
@@ -718,13 +767,14 @@
   </main>
 
   <div class="slideshow-modal" id="slideshow-modal">
-    <div class="slideshow-content">
+    <div class="slideshow-content" onclick="handleSlideshowClick(event)">
       <div class="slideshow-slide" id="slideshow-slide"></div>
     </div>
     <div class="slideshow-controls">
       <button class="slideshow-btn" onclick="prevSlideshowSlide()">◀ Prev</button>
       <span class="slideshow-page" id="slideshow-page">1 / 1</span>
       <button class="slideshow-btn" onclick="nextSlideshowSlide()">Next ▶</button>
+      <button class="slideshow-btn" onclick="toggleFullscreen()" id="fullscreen-btn">⛶ Fullscreen</button>
       <button class="slideshow-btn" onclick="endSlideshow()">✕ Exit</button>
     </div>
   </div>
@@ -854,7 +904,118 @@
     let uploadedImages = new Map();
     let slideshowSlide = 0;
     let currentTheme = 'default';
+    let currentFont = 'sans';
     let themeChangedByUI = false;  // フラグ: UIセレクターからの変更か
+    let fontChangedByUI = false;   // フラグ: UIセレクターからの変更か
+
+    // Font presets
+    const FONT_PRESETS = {
+      sans: {
+        heading: 'Noto Sans JP',
+        body: 'Noto Sans JP',
+        code: 'Fira Code'
+      },
+      serif: {
+        heading: 'Noto Serif JP',
+        body: 'Noto Serif JP',
+        code: 'Source Code Pro'
+      },
+      rounded: {
+        heading: 'M PLUS Rounded 1c',
+        body: 'M PLUS 1p',
+        code: 'Fira Code'
+      },
+      business: {
+        heading: 'BIZ UDGothic',
+        body: 'BIZ UDGothic',
+        code: 'Roboto Mono'
+      },
+      modern: {
+        heading: 'Montserrat',
+        body: 'Noto Sans JP',
+        code: 'JetBrains Mono'
+      },
+      elegant: {
+        heading: 'Playfair Display',
+        body: 'Shippori Mincho',
+        code: 'Source Code Pro'
+      },
+      handwritten: {
+        heading: 'Klee One',
+        body: 'Klee One',
+        code: 'Fira Code'
+      }
+    };
+
+    // Available fonts list
+    const AVAILABLE_FONTS = {
+      japanese: [
+        'Noto Sans JP',
+        'Noto Serif JP',
+        'M PLUS 1p',
+        'M PLUS Rounded 1c',
+        'Zen Maru Gothic',
+        'BIZ UDGothic',
+        'Shippori Mincho',
+        'Klee One'
+      ],
+      latin: [
+        'Inter',
+        'Roboto',
+        'Montserrat',
+        'Open Sans',
+        'Lato',
+        'Playfair Display'
+      ],
+      code: [
+        'Fira Code',
+        'Source Code Pro',
+        'JetBrains Mono',
+        'Roboto Mono'
+      ]
+    };
+
+    // Get font settings from meta or UI
+    function getFontSettings(meta) {
+      // Priority: UI selector > meta.font > default
+      // (UI takes priority when user explicitly changes it)
+      let fonts = FONT_PRESETS[currentFont] || FONT_PRESETS.sans;
+      
+      if (meta?.font) {
+        if (typeof meta.font === 'string') {
+          // Preset name or single font
+          if (FONT_PRESETS[meta.font]) {
+            // Only use meta.font if UI hasn't been changed
+            if (!fontChangedByUI) {
+              fonts = FONT_PRESETS[meta.font];
+            }
+          } else {
+            // Single font name for all (custom font)
+            fonts = {
+              heading: meta.font,
+              body: meta.font,
+              code: 'Fira Code'
+            };
+          }
+        } else if (typeof meta.font === 'object') {
+          // Detailed font settings
+          fonts = {
+            heading: meta.font.heading || fonts.heading,
+            body: meta.font.body || fonts.body,
+            code: meta.font.code || fonts.code
+          };
+        }
+      }
+      
+      return fonts;
+    }
+
+    // Font change handler
+    function changeFont(fontPreset) {
+      fontChangedByUI = true;
+      currentFont = fontPreset;
+      parseAndRender();
+    }
 
     // Theme functions
     function changeTheme(themeName) {
@@ -1058,7 +1219,7 @@
           // Meta snippet
           const metaSnippet = {
             label: '⚙️ meta',
-            insertText: 'meta:\n  project: "${1:Project Name}"\n  author: "${2:Author}"\n  date: "${3:2025-01-01}"\n  version: "${4:1.0}"\n  theme: ${5:default}\n\nslides:',
+            insertText: 'meta:\n  project: "${1:Project Name}"\n  author: "${2:Author}"\n  date: "${3:2025-01-01}"\n  version: "${4:1.0}"\n  theme: ${5:default}\n  font: ${6:sans}\n\nslides:',
             detail: 'Meta section with slides'
           };
           
@@ -1074,6 +1235,13 @@
             label: '🎨 format',
             insertText: 'format:\n    accent:\n      color: "${1:#3b82f6}"\n    title:\n      color: "${2:#1a1a1a}"\n      size: ${3:48}\n    bullet:\n      color: "${4:#3b82f6}"',
             detail: 'Format settings'
+          };
+          
+          // Font snippet
+          const fontSnippet = {
+            label: '🔤 font',
+            insertText: 'font:\n    heading: "${1:Montserrat}"\n    body: "${2:Noto Sans JP}"\n    code: "${3:Fira Code}"',
+            detail: 'Custom font settings'
           };
           
           // Diagram snippet
@@ -1153,7 +1321,7 @@
           }
           
           if (context === 'in-meta') {
-            [headerFooterSnippet, formatSnippet].forEach(s => {
+            [headerFooterSnippet, formatSnippet, fontSnippet].forEach(s => {
               suggestions.push({
                 label: s.label,
                 kind: monaco.languages.CompletionItemKind.Snippet,
@@ -1241,6 +1409,10 @@
             { label: 'date:', detail: 'Date' },
             { label: 'version:', detail: 'Version' },
             { label: 'theme:', detail: 'Theme name' },
+            { label: 'font:', detail: 'Font preset or settings' },
+            { label: 'heading:', detail: 'Heading font family' },
+            { label: 'body:', detail: 'Body content' },
+            { label: 'code:', detail: 'Code block' },
             { label: 'title:', detail: 'Slide title' },
             { label: 'subtitle:', detail: 'Subtitle' },
             { label: 'template:', detail: 'Template type' },
@@ -1351,6 +1523,13 @@
             { label: 'lavender', detail: 'Lavender theme' },
             { label: 'rose', detail: 'Rose theme' },
             { label: 'midnight', detail: 'Midnight theme' },
+            { label: 'sans', detail: 'Gothic font (Noto Sans JP)' },
+            { label: 'serif', detail: 'Mincho font (Noto Serif JP)' },
+            { label: 'rounded', detail: 'Rounded font (M PLUS Rounded)' },
+            { label: 'business', detail: 'Business font (BIZ UDGothic)' },
+            { label: 'modern', detail: 'Modern font (Montserrat + Noto)' },
+            { label: 'elegant', detail: 'Elegant font (Playfair + Shippori)' },
+            { label: 'handwritten', detail: 'Handwritten font (Klee One)' },
             { label: 'figure_caption', detail: 'Figure with caption' },
             { label: 'split', detail: 'Split layout' },
             { label: 'horizontal', detail: 'Horizontal' },
@@ -1443,25 +1622,30 @@
         parseAndRender();
       });
 
-      loadSample();
-    });
-
-    // Theme selector - register once after DOM is ready
-    (function initThemeSelector() {
+      // Theme selector
       const themeSelect = document.getElementById('theme-select');
-      if (themeSelect && !themeSelect._listenerAdded) {
-        themeSelect._listenerAdded = true;
-        let isChanging = false;
-        
+      if (themeSelect) {
         themeSelect.addEventListener('change', function(e) {
-          if (isChanging) return;
-          isChanging = true;
           e.stopPropagation();
-          changeTheme(this.value);
-          setTimeout(() => { isChanging = false; }, 50);
+          themeChangedByUI = true;
+          currentTheme = this.value;
+          parseAndRender();
         });
       }
-    })();
+
+      // Font selector
+      const fontSelect = document.getElementById('font-select');
+      if (fontSelect) {
+        fontSelect.addEventListener('change', function(e) {
+          e.stopPropagation();
+          fontChangedByUI = true;
+          currentFont = this.value;
+          parseAndRender();
+        });
+      }
+
+      loadSample();
+    });
 
     // Tab switching
     document.querySelectorAll('.editor-tab').forEach(tab => {
@@ -1550,6 +1734,16 @@
           currentTheme = parsedData.meta.theme;
           if (themeSelect) themeSelect.value = currentTheme;
         }
+        
+        // Sync font selector with meta.font (only if not changed by UI)
+        const fontSelect = document.getElementById('font-select');
+        if (!fontChangedByUI && parsedData?.meta?.font) {
+          const fontValue = typeof parsedData.meta.font === 'string' ? parsedData.meta.font : null;
+          if (fontValue && FONT_PRESETS[fontValue]) {
+            currentFont = fontValue;
+            if (fontSelect) fontSelect.value = currentFont;
+          }
+        }
       } catch (e) {
         errors.push({ type: 'error', message: `YAML Error: ${e.message}` });
         parsedData = null;
@@ -1558,6 +1752,10 @@
       renderValidation(errors);
       renderOutline();
       renderSlide();
+      
+      // Reset UI change flags after rendering
+      themeChangedByUI = false;
+      fontChangedByUI = false;
     }
 
     function renderValidation(errors) {
@@ -1643,6 +1841,9 @@
       // Get theme colors (base from theme, can be overridden by format)
       const theme = getThemeColors(meta);
       
+      // Get font settings
+      const fonts = getFontSettings(meta);
+      
       // Merge slide-specific format
       const slideFormat = slide.format || {};
       const colors = {
@@ -1656,7 +1857,11 @@
         bullet: slideFormat.bullet?.color || format.bullet?.color || theme.bullet,
         muted: theme.muted,
         headerBg: theme.headerBg,
-        footerBg: theme.footerBg
+        footerBg: theme.footerBg,
+        // Font settings
+        headingFont: fonts.heading,
+        bodyFont: fonts.body,
+        codeFont: fonts.code
       };
       
       let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
@@ -1716,21 +1921,21 @@
       svg += `<rect x="0" y="${H/2 - 120}" width="8" height="240" fill="${colors.accent}"/>`;
       
       // Title
-      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title || '')}</text>`;
+      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title || '')}</text>`;
       
       // Subtitle
       if (slide.subtitle) {
-        svg += `<text x="${W/2}" y="${H/2 + 40}" text-anchor="middle" font-size="36" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
+        svg += `<text x="${W/2}" y="${H/2 + 40}" text-anchor="middle" font-size="36" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
       }
       
       // Author & Date
       let bottomY = H - 120;
       if (slide.author) {
-        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="24" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.author)}</text>`;
+        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="24" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.author)}</text>`;
         bottomY += 40;
       }
       if (slide.date) {
-        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.date)}</text>`;
+        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.date)}</text>`;
       }
       
       return svg;
@@ -1745,11 +1950,11 @@
       svg += `<rect x="${W/2 - 400}" y="${H/2 - 2}" width="800" height="4" fill="${colors.accent}"/>`;
       
       // Title
-      svg += `<text x="${W/2}" y="${H/2 - 60}" text-anchor="middle" font-size="64" font-weight="700" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title || '')}</text>`;
+      svg += `<text x="${W/2}" y="${H/2 - 60}" text-anchor="middle" font-size="64" font-weight="700" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title || '')}</text>`;
       
       // Subtitle
       if (slide.subtitle) {
-        svg += `<text x="${W/2}" y="${H/2 + 60}" text-anchor="middle" font-size="32" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
+        svg += `<text x="${W/2}" y="${H/2 + 60}" text-anchor="middle" font-size="32" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
       }
       
       return svg;
@@ -1774,12 +1979,12 @@
       
       // Author
       if (slide.author) {
-        svg += `<text x="${W/2}" y="${H - 180}" text-anchor="middle" font-size="28" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">— ${escapeHtml(slide.author)}</text>`;
+        svg += `<text x="${W/2}" y="${H - 180}" text-anchor="middle" font-size="28" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">— ${escapeHtml(slide.author)}</text>`;
       }
       
       // Source
       if (slide.source) {
-        svg += `<text x="${W/2}" y="${H - 130}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.source)}</text>`;
+        svg += `<text x="${W/2}" y="${H - 130}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.source)}</text>`;
       }
       
       return svg;
@@ -1790,15 +1995,15 @@
       let svg = '';
       
       // Large question mark
-      svg += `<text x="${W/2}" y="${H/2 - 50}" text-anchor="middle" font-size="400" fill="${colors.accent}" opacity="0.1" font-family="Inter, sans-serif">?</text>`;
+      svg += `<text x="${W/2}" y="${H/2 - 50}" text-anchor="middle" font-size="400" fill="${colors.accent}" opacity="0.1" font-family="${colors.headingFont}, sans-serif">?</text>`;
       
       // Title
       const title = slide.title || 'Questions?';
-      svg += `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      svg += `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(title)}</text>`;
       
       // Contact
       if (slide.contact) {
-        svg += `<text x="${W/2}" y="${H/2 + 80}" text-anchor="middle" font-size="28" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.contact)}</text>`;
+        svg += `<text x="${W/2}" y="${H/2 + 80}" text-anchor="middle" font-size="28" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.contact)}</text>`;
       }
       
       return svg;
@@ -1813,16 +2018,16 @@
       
       // Title
       const title = slide.title || 'Thank You!';
-      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="80" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="80" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(title)}</text>`;
       
       // Message
       if (slide.message) {
-        svg += `<text x="${W/2}" y="${H/2 + 50}" text-anchor="middle" font-size="28" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.message)}</text>`;
+        svg += `<text x="${W/2}" y="${H/2 + 50}" text-anchor="middle" font-size="28" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.message)}</text>`;
       }
       
       // Contact
       if (slide.contact) {
-        svg += `<text x="${W/2}" y="${H/2 + 110}" text-anchor="middle" font-size="24" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.contact)}</text>`;
+        svg += `<text x="${W/2}" y="${H/2 + 110}" text-anchor="middle" font-size="24" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.contact)}</text>`;
       }
       
       return svg;
@@ -1834,7 +2039,7 @@
       
       // Title
       const title = slide.title || 'Agenda';
-      svg += `<text x="120" y="140" font-size="56" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      svg += `<text x="120" y="140" font-size="56" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(title)}</text>`;
       svg += `<rect x="120" y="170" width="200" height="4" fill="${colors.accent}"/>`;
       
       // Items
@@ -1843,10 +2048,10 @@
       items.forEach((item, i) => {
         // Number circle
         svg += `<circle cx="180" cy="${y - 12}" r="24" fill="${colors.accent}"/>`;
-        svg += `<text x="180" y="${y - 6}" text-anchor="middle" font-size="20" font-weight="600" fill="${colors.background}" font-family="Inter, sans-serif">${i + 1}</text>`;
+        svg += `<text x="180" y="${y - 6}" text-anchor="middle" font-size="20" font-weight="600" fill="${colors.background}" font-family="${colors.headingFont}, sans-serif">${i + 1}</text>`;
         
         // Item text
-        svg += `<text x="230" y="${y}" font-size="32" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+        svg += `<text x="230" y="${y}" font-size="32" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
         y += 90;
       });
       
@@ -1859,7 +2064,7 @@
       
       // Title
       if (slide.title) {
-        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
       }
       
       const leftX = W * 0.25;
@@ -1869,11 +2074,11 @@
       // Left side
       if (slide.left) {
         svg += `<rect x="80" y="${startY - 20}" width="${W/2 - 120}" height="${H - startY - 80}" rx="8" fill="${colors.accent}" opacity="0.05"/>`;
-        svg += `<text x="${leftX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.left.label || 'Left')}</text>`;
+        svg += `<text x="${leftX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.left.label || 'Left')}</text>`;
         
         let y = startY + 120;
         (slide.left.items || []).forEach(item => {
-          svg += `<text x="${leftX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">• ${escapeHtml(item)}</text>`;
+          svg += `<text x="${leftX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">• ${escapeHtml(item)}</text>`;
           y += 50;
         });
       }
@@ -1884,11 +2089,11 @@
       // Right side
       if (slide.right) {
         svg += `<rect x="${W/2 + 40}" y="${startY - 20}" width="${W/2 - 120}" height="${H - startY - 80}" rx="8" fill="${colors.accent}" opacity="0.1"/>`;
-        svg += `<text x="${rightX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.right.label || 'Right')}</text>`;
+        svg += `<text x="${rightX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.right.label || 'Right')}</text>`;
         
         let y = startY + 120;
         (slide.right.items || []).forEach(item => {
-          svg += `<text x="${rightX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">• ${escapeHtml(item)}</text>`;
+          svg += `<text x="${rightX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">• ${escapeHtml(item)}</text>`;
           y += 50;
         });
       }
@@ -1902,7 +2107,7 @@
       
       // Title
       if (slide.title) {
-        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
       }
       
       const events = slide.events || [];
@@ -1925,13 +2130,13 @@
         svg += `<circle cx="${x}" cy="${lineY}" r="8" fill="${colors.background}"/>`;
         
         // Date (above)
-        svg += `<text x="${x}" y="${lineY - 50}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(event.date || '')}</text>`;
+        svg += `<text x="${x}" y="${lineY - 50}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(event.date || '')}</text>`;
         
         // Title (below)
         const titleLines = wrapText(event.title || '', 15);
         let ty = lineY + 50;
         titleLines.forEach(line => {
-          svg += `<text x="${x}" y="${ty}" text-anchor="middle" font-size="20" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(line)}</text>`;
+          svg += `<text x="${x}" y="${ty}" text-anchor="middle" font-size="20" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(line)}</text>`;
           ty += 28;
         });
       });
@@ -1945,7 +2150,7 @@
       
       // Title
       if (slide.title) {
-        svg += `<text x="120" y="120" font-size="${colors.titleSize}" font-weight="${colors.titleWeight}" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+        svg += `<text x="120" y="120" font-size="${colors.titleSize}" font-weight="${colors.titleWeight}" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
       }
       
       // Body content
@@ -2160,7 +2365,7 @@
         const textX = cellX + cellW / 2;
         const textY = tableY + rowHeight / 2 + fontSize / 3;
         
-        svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" font-weight="600" fill="${headerColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(header)}</text>`;
+        svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" font-weight="600" fill="${headerColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(header)}</text>`;
         
         // Column divider
         if (border && i > 0) {
@@ -2206,7 +2411,7 @@
           // Remove ** for bold (we'll render all text the same for now)
           const cleanCell = cell.replace(/\*\*/g, '');
           
-          svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(cleanCell)}</text>`;
+          svg += `<text x="${textX}" y="${textY}" text-anchor="${textAnchor}" font-size="${fontSize}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(cleanCell)}</text>`;
         });
       });
       
@@ -2341,7 +2546,7 @@
       // Language badge
       if (language && language !== 'text') {
         svg += `<rect x="${codeX + codeW - 100}" y="${codeY}" width="100" height="28" rx="0 8 0 8" fill="${colors.accent}" opacity="0.8"/>`;
-        svg += `<text x="${codeX + codeW - 50}" y="${codeY + 19}" text-anchor="middle" font-size="12" fill="#ffffff" font-family="Inter, sans-serif">${escapeHtml(language)}</text>`;
+        svg += `<text x="${codeX + codeW - 50}" y="${codeY + 19}" text-anchor="middle" font-size="12" fill="#ffffff" font-family="${colors.headingFont}, sans-serif">${escapeHtml(language)}</text>`;
       }
       
       // Language-specific keywords
@@ -2428,7 +2633,7 @@
       lines.forEach((line, i) => {
         // Line number
         if (showLineNumbers) {
-          svg += `<text x="${codeX + padding + 30}" y="${y}" text-anchor="end" font-size="${fontSize}" fill="${syntaxColors.comment}" font-family="JetBrains Mono, monospace">${i + 1}</text>`;
+          svg += `<text x="${codeX + padding + 30}" y="${y}" text-anchor="end" font-size="${fontSize}" fill="${syntaxColors.comment}" font-family="${colors.codeFont}, monospace">${i + 1}</text>`;
         }
         
         // Code line with highlighting
@@ -2436,7 +2641,7 @@
         let x = codeX + padding + lineNumWidth + 10;
         
         tokens.forEach(token => {
-          svg += `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${token.color}" font-family="JetBrains Mono, monospace">${escapeHtml(token.text)}</text>`;
+          svg += `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${token.color}" font-family="${colors.codeFont}, monospace">${escapeHtml(token.text)}</text>`;
           // Estimate character width for monospace font
           x += token.text.length * fontSize * 0.6;
         });
@@ -2729,7 +2934,7 @@
             const rx = shape.rx || 0;
             svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
-              svg += `<text x="${x + width/2}" y="${y + height/2 + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${x + width/2}" y="${y + height/2 + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2738,7 +2943,7 @@
             const r = shape.r || 50;
             svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
-              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2748,7 +2953,7 @@
             const ry = shape.ry || 50;
             svg += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
-              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2770,7 +2975,7 @@
             if (label) {
               const midX = (x + x2) / 2;
               const midY = (y + y2) / 2 - 10;
-              svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${labelSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${labelSize}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2799,7 +3004,7 @@
             const fontSize = shape.fontSize || 28;
             const anchor = shape.anchor || 'start';
             const textFill = fill !== colors.accent ? fill : colors.text;
-            svg += `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${fontSize}" fill="${textFill}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+            svg += `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${fontSize}" fill="${textFill}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             break;
           }
           
@@ -2810,7 +3015,7 @@
             const points = `${cx},${cy-size/2} ${cx+size/2},${cy} ${cx},${cy+size/2} ${cx-size/2},${cy}`;
             svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
-              svg += `<text x="${cx}" y="${cy + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${cx}" y="${cy + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2821,7 +3026,7 @@
             const points = `${x},${y+height} ${x+width/2},${y} ${x+width},${y+height}`;
             svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
-              svg += `<text x="${x + width/2}" y="${y + height*0.7}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(label)}</text>`;
+              svg += `<text x="${x + width/2}" y="${y + height*0.7}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
             }
             break;
           }
@@ -2869,7 +3074,7 @@
     function renderTextWithInlineMath(text, x, y, colors, anchor) {
       // Check if text contains inline math
       if (!text.includes('$')) {
-        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(text)}</text>`;
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(text)}</text>`;
       }
       
       // Split text by $...$ patterns
@@ -2915,7 +3120,7 @@
           <div xmlns="http://www.w3.org/1999/xhtml" style="
             font-size: ${colors.textSize}px;
             color: ${colors.text};
-            font-family: Inter, Noto Sans JP, sans-serif;
+            font-family: ${colors.bodyFont}, sans-serif;
             white-space: nowrap;
           ">${html}</div>
         </foreignObject>`;
@@ -2928,7 +3133,7 @@
             display = display.replace('$' + part.content + '$', converted);
           }
         });
-        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(display)}</text>`;
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${colors.textSize}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(display)}</text>`;
       }
     }
     
@@ -2986,7 +3191,7 @@
         
         // Caption
         if (body.caption) {
-          svg += `<text x="${imgX + imgW/2}" y="${imgY + imgH + 40}" text-anchor="middle" font-size="18" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.caption)}</text>`;
+          svg += `<text x="${imgX + imgW/2}" y="${imgY + imgH + 40}" text-anchor="middle" font-size="18" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(body.caption)}</text>`;
         }
       }
       
@@ -2997,7 +3202,7 @@
       if (Array.isArray(text)) {
         text.forEach(item => {
           svg += `<circle cx="140" cy="${y - 10}" r="6" fill="${colors.bullet}"/>`;
-          svg += `<text x="170" y="${y}" font-size="28" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+          svg += `<text x="170" y="${y}" font-size="28" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
           y += 60;
         });
       }
@@ -3017,12 +3222,12 @@
         if (body.left) {
           let y = 220;
           if (body.left.title) {
-            svg += `<text x="${leftX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.left.title)}</text>`;
+            svg += `<text x="${leftX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(body.left.title)}</text>`;
             y += 60;
           }
           (body.left.text || []).forEach(item => {
             svg += `<circle cx="${leftX + 20}" cy="${y - 10}" r="5" fill="${colors.bullet}"/>`;
-            svg += `<text x="${leftX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+            svg += `<text x="${leftX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
             y += 50;
           });
         }
@@ -3034,12 +3239,12 @@
         if (body.right) {
           let y = 220;
           if (body.right.title) {
-            svg += `<text x="${rightX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.right.title)}</text>`;
+            svg += `<text x="${rightX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(body.right.title)}</text>`;
             y += 60;
           }
           (body.right.text || []).forEach(item => {
             svg += `<circle cx="${rightX + 20}" cy="${y - 10}" r="5" fill="${colors.bullet}"/>`;
-            svg += `<text x="${rightX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+            svg += `<text x="${rightX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
             y += 50;
           });
         }
@@ -3062,7 +3267,7 @@
         boxes.forEach((box, i) => {
           // Box
           svg += `<rect x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="8" fill="${colors.accent}" opacity="0.1" stroke="${colors.accent}" stroke-width="2"/>`;
-          svg += `<text x="${x + boxW/2}" y="${y + boxH/2 + 8}" text-anchor="middle" font-size="20" font-weight="500" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(box)}</text>`;
+          svg += `<text x="${x + boxW/2}" y="${y + boxH/2 + 8}" text-anchor="middle" font-size="20" font-weight="500" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(box)}</text>`;
           
           // Arrow
           if (i < boxes.length - 1) {
@@ -3218,7 +3423,7 @@
           const midX = (x1 + x2) / 2;
           const midY = (y1 + y2) / 2 - 10;
           svg += `<rect x="${midX - 30}" y="${midY - 14}" width="60" height="20" rx="4" fill="${colors.background}"/>`;
-          svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${fontSize * 0.8}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(edge.label)}</text>`;
+          svg += `<text x="${midX}" y="${midY}" text-anchor="middle" font-size="${fontSize * 0.8}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(edge.label)}</text>`;
         }
       });
       
@@ -3252,7 +3457,7 @@
         }
         
         // Node label
-        svg += `<text x="${x}" y="${y + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif" font-weight="500">${escapeHtml(node.label)}</text>`;
+        svg += `<text x="${x}" y="${y + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif" font-weight="500">${escapeHtml(node.label)}</text>`;
       });
       
       return svg;
@@ -3498,7 +3703,7 @@
       participants.forEach(p => {
         const x = partPositions.get(p);
         svg += `<rect x="${x - participantWidth/2}" y="${startY}" width="${participantWidth}" height="${participantHeight}" rx="6" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
-        svg += `<text x="${x}" y="${startY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(p)}</text>`;
+        svg += `<text x="${x}" y="${startY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(p)}</text>`;
       });
       
       // Draw messages
@@ -3520,14 +3725,14 @@
           // Self message (loop)
           const loopW = 50;
           svg += `<path d="M ${fromX} ${y} h ${loopW} v 30 h -${loopW}" fill="none" stroke="${colors.accent}" stroke-width="2" ${isDashed ? 'stroke-dasharray="6,3"' : ''} marker-end="url(#${marker})"/>`;
-          svg += `<text x="${fromX + loopW + 10}" y="${y + 15}" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(msg.text)}</text>`;
+          svg += `<text x="${fromX + loopW + 10}" y="${y + 15}" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(msg.text)}</text>`;
         } else {
           const direction = toX > fromX ? 1 : -1;
           svg += `<line x1="${fromX}" y1="${y}" x2="${toX - direction * 5}" y2="${y}" stroke="${colors.accent}" stroke-width="2" ${isDashed ? 'stroke-dasharray="6,3"' : ''} marker-end="url(#${marker})"/>`;
           
           // Message text
           const textX = (fromX + toX) / 2;
-          svg += `<text x="${textX}" y="${y - 10}" text-anchor="middle" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(msg.text)}</text>`;
+          svg += `<text x="${textX}" y="${y - 10}" text-anchor="middle" font-size="${fontSize * 0.9}" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(msg.text)}</text>`;
         }
       });
       
@@ -3535,7 +3740,7 @@
       participants.forEach(p => {
         const x = partPositions.get(p);
         svg += `<rect x="${x - participantWidth/2}" y="${lifelineEndY}" width="${participantWidth}" height="${participantHeight}" rx="6" fill="${colors.accent}" opacity="0.15" stroke="${colors.accent}" stroke-width="2"/>`;
-        svg += `<text x="${x}" y="${lifelineEndY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(p)}</text>`;
+        svg += `<text x="${x}" y="${lifelineEndY + participantHeight/2 + fontSize * 0.35}" text-anchor="middle" font-size="${fontSize}" fill="${colors.accent}" font-weight="500" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(p)}</text>`;
       });
       
       return svg;
@@ -3552,7 +3757,7 @@
       const textSize = format.size || 28;
       
       svg += `<rect x="0" y="0" width="${W}" height="50" fill="${bgColor}"/>`;
-      svg += `<text x="60" y="36" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(text)}</text>`;
+      svg += `<text x="60" y="36" font-size="${textSize}" fill="${textColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(text)}</text>`;
       
       return svg;
     }
@@ -3573,9 +3778,9 @@
       const center = replacePlaceholders(footer.center || '', meta, pageNum, totalPages);
       const right = replacePlaceholders(footer.right || '', meta, pageNum, totalPages);
       
-      svg += `<text x="60" y="${footerY}" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(left)}</text>`;
-      svg += `<text x="${W/2}" y="${footerY}" text-anchor="middle" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(center)}</text>`;
-      svg += `<text x="${W - 60}" y="${footerY}" text-anchor="end" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(right)}</text>`;
+      svg += `<text x="60" y="${footerY}" font-size="${textSize}" fill="${textColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(left)}</text>`;
+      svg += `<text x="${W/2}" y="${footerY}" text-anchor="middle" font-size="${textSize}" fill="${textColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(center)}</text>`;
+      svg += `<text x="${W - 60}" y="${footerY}" text-anchor="end" font-size="${textSize}" fill="${textColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(right)}</text>`;
       
       return svg;
     }
@@ -3645,20 +3850,94 @@
       if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) return;
       
       slideshowSlide = currentSlide;
-      document.getElementById('slideshow-modal').classList.add('active');
+      const modal = document.getElementById('slideshow-modal');
+      modal.classList.add('active');
       renderSlideshowSlide();
       document.addEventListener('keydown', slideshowKeyHandler);
+      
+      // Listen for fullscreen changes
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     }
 
     function endSlideshow() {
-      document.getElementById('slideshow-modal').classList.remove('active');
+      const modal = document.getElementById('slideshow-modal');
+      modal.classList.remove('active');
+      modal.classList.remove('fullscreen');
       document.removeEventListener('keydown', slideshowKeyHandler);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      
+      // Exit fullscreen if active
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    function toggleFullscreen() {
+      const modal = document.getElementById('slideshow-modal');
+      
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } else {
+        // Enter fullscreen
+        if (modal.requestFullscreen) {
+          modal.requestFullscreen();
+        } else if (modal.webkitRequestFullscreen) {
+          modal.webkitRequestFullscreen();
+        }
+      }
+    }
+
+    function handleFullscreenChange() {
+      const modal = document.getElementById('slideshow-modal');
+      const btn = document.getElementById('fullscreen-btn');
+      
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        modal.classList.add('fullscreen');
+        btn.textContent = '⛶ Exit Fullscreen';
+      } else {
+        modal.classList.remove('fullscreen');
+        btn.textContent = '⛶ Fullscreen';
+      }
+    }
+
+    function handleSlideshowClick(event) {
+      // Don't navigate if clicking on controls
+      if (event.target.closest('.slideshow-controls')) return;
+      
+      // Click on left third = prev, right two-thirds = next
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const width = rect.width;
+      
+      if (x < width / 3) {
+        prevSlideshowSlide();
+      } else {
+        nextSlideshowSlide();
+      }
     }
 
     function slideshowKeyHandler(e) {
-      if (e.key === 'Escape') endSlideshow();
+      if (e.key === 'Escape') {
+        // If in fullscreen, just exit fullscreen (browser handles this)
+        // If not in fullscreen, end slideshow
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          endSlideshow();
+        }
+      }
       if (e.key === 'ArrowLeft') prevSlideshowSlide();
       if (e.key === 'ArrowRight' || e.key === ' ') nextSlideshowSlide();
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     }
 
     function renderSlideshowSlide() {
@@ -3784,15 +4063,19 @@
 
     // Sample
     function loadSample() {
-      const sample = `# FrameNote v0.4 Sample - Templates & Themes Demo
+      const sample = `# FrameNote v0.4.1 Sample - Templates & Themes Demo
 meta:
   project: FrameNote Templates
   author: FrameNote Team
-  version: "0.4"
+  version: "0.4.1"
   date: "2025-01-01"
   # Theme can be set here (or use UI selector)
   # Options: default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
   theme: default
+  # Font can be set here (or use UI selector)
+  # Presets: sans, serif, rounded, business, modern, elegant, handwritten
+  # Or detailed: font: { heading: "Montserrat", body: "Noto Sans JP", code: "Fira Code" }
+  font: sans
   header:
     show: true
     text: "{project}"
@@ -3813,7 +4096,7 @@ meta:
 slides:
   # Title Template
   - template: title
-    title: "FrameNote v0.4"
+    title: "FrameNote v0.4.1"
     subtitle: "Templates & Themes"
     author: "FrameNote Team"
     date: "2025"
@@ -3871,7 +4154,7 @@ slides:
         title: "PDL対応"
       - date: "v0.3"
         title: "テンプレート"
-      - date: "v0.4"
+      - date: "v0.4.1"
         title: "エクスポート"
 
   # Diagram
@@ -4053,7 +4336,7 @@ slides:
         pdf.setProperties({
           title: meta.project || 'Presentation',
           author: meta.author || 'FrameNote',
-          creator: 'FrameNote v0.4'
+          creator: 'FrameNote v0.4.1'
         });
 
         // Download
@@ -4106,7 +4389,7 @@ slides:
         // Set presentation properties
         pptx.author = meta.author || 'FrameNote';
         pptx.title = meta.project || 'Presentation';
-        pptx.subject = 'Created with FrameNote v0.4';
+        pptx.subject = 'Created with FrameNote v0.4.1';
         
         // Use standard 16:9 layout (13.33" x 7.5")
         pptx.layout = 'LAYOUT_16x9';
@@ -4645,6 +4928,13 @@ slides:
       const globalFormat = meta.format || {};
       const total = parsedData.slides.length;
       const theme = getThemeColors(meta);
+      const fonts = getFontSettings(meta);
+
+      // Generate Google Fonts URL
+      const fontFamilies = [...new Set([fonts.heading, fonts.body, fonts.code])];
+      const googleFontsUrl = 'https://fonts.googleapis.com/css2?' + 
+        fontFamilies.map(f => 'family=' + f.replace(/ /g, '+') + ':wght@400;700').join('&') + 
+        '&display=swap';
 
       // Generate SVGs for all slides
       const slideSVGs = parsedData.slides.map((slide, i) => {
@@ -4690,11 +4980,14 @@ slides:
 '  <meta charset="UTF-8">\n' +
 '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
 '  <title>' + escapeHtml(meta.project || 'Presentation') + ' - FrameNote</title>\n' +
+'  <link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+'  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
+'  <link href="' + googleFontsUrl + '" rel="stylesheet">\n' +
 '  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">\n' +
 '  <style>\n' +
 '    * { margin: 0; padding: 0; box-sizing: border-box; }\n' +
 '    body {\n' +
-'      font-family: Inter, Noto Sans JP, sans-serif;\n' +
+'      font-family: ' + fonts.body + ', sans-serif;\n' +
 '      background: #000;\n' +
 '      color: #fff;\n' +
 '      height: 100vh;\n' +

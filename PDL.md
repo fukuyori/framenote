@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### Detailed Specification v0.4 (FrameNote)
+### Detailed Specification v0.4.1 (FrameNote)
 
 ---
 
@@ -92,6 +92,7 @@ meta:
   date: string
   version: string
   theme: ThemeName
+  font: FontPreset | FontObject
   header: HeaderObject
   footer: FooterObject
 ```
@@ -113,7 +114,46 @@ Available values:
 | `rose` | Pink-tinted background, rose accent |
 | `midnight` | Navy background, violet accent |
 
-### 5.3 header (HeaderObject)
+### 5.3 font (FontPreset | FontObject)
+
+#### Preset values (FontPreset)
+
+| Preset | Heading | Body | Code |
+|--------|---------|------|------|
+| `sans` | Noto Sans JP | Noto Sans JP | Fira Code |
+| `serif` | Noto Serif JP | Noto Serif JP | Source Code Pro |
+| `rounded` | M PLUS Rounded 1c | M PLUS 1p | Fira Code |
+| `business` | BIZ UDGothic | BIZ UDGothic | Roboto Mono |
+| `modern` | Montserrat | Noto Sans JP | JetBrains Mono |
+| `elegant` | Playfair Display | Shippori Mincho | Source Code Pro |
+| `handwritten` | Klee One | Klee One | Fira Code |
+
+#### Custom font object (FontObject)
+
+```yaml
+font:
+  heading: string  # Google Fonts font name
+  body: string     # Google Fonts font name
+  code: string     # Monospace font name
+```
+
+#### Available Google Fonts
+
+**Japanese:**
+- Noto Sans JP, Noto Serif JP
+- M PLUS 1p, M PLUS Rounded 1c
+- Zen Maru Gothic, BIZ UDGothic
+- Shippori Mincho, Klee One
+
+**Latin:**
+- Inter, Roboto, Montserrat
+- Open Sans, Lato, Playfair Display
+
+**Code:**
+- Fira Code, Source Code Pro
+- JetBrains Mono, Roboto Mono
+
+### 5.4 header (HeaderObject)
 
 ```yaml
 header:
@@ -765,7 +805,7 @@ The following are reserved for future versions:
 * PDL v0.x: Experimental
 * PDL v1.0: Backward compatibility guaranteed
 
-FrameNote v0.4 conforms to **PDL v0.4**.
+FrameNote v0.4.1 conforms to **PDL v0.4.1**.
 
 ---
 
@@ -811,7 +851,7 @@ meta:
 slides:
   # Title slide
   - template: title
-    title: "PDL v0.4 Demo"
+    title: "PDL v0.4.1 Demo"
     subtitle: "Presentation Description Language"
     author: "FrameNote"
     date: "2025"
@@ -871,6 +911,10 @@ slides:
 
 ## Appendix C: Changelog
 
+### v0.4.1
+
+* Fixed font selector UI synchronization
+
 ### v0.4
 
 * Added `table` with Markdown format and alignment
@@ -886,6 +930,8 @@ slides:
 * Added flowchart/sequence sizing options
 * Added 8 slide templates
 * Added 10 preset themes
+* Added 7 font presets with Google Fonts
+* Added custom font configuration
 * Added header/footer with placeholders
 
 ### v0.3

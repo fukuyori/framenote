@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### 詳細仕様 v0.4 (FrameNote)
+### 詳細仕様 v0.4.1 (FrameNote)
 
 ---
 
@@ -87,6 +87,7 @@ meta:
   date: string
   version: string
   theme: ThemeName
+  font: FontPreset | FontObject
   header: HeaderObject
   footer: FooterObject
 ```
@@ -108,7 +109,46 @@ meta:
 | `rose` | ピンク系背景、ローズアクセント |
 | `midnight` | ネイビー背景、バイオレットアクセント |
 
-### 5.3 header（HeaderObject）
+### 5.3 font（FontPreset | FontObject）
+
+#### プリセット値（FontPreset）
+
+| プリセット | 見出し | 本文 | コード |
+|-----------|--------|------|--------|
+| `sans` | Noto Sans JP | Noto Sans JP | Fira Code |
+| `serif` | Noto Serif JP | Noto Serif JP | Source Code Pro |
+| `rounded` | M PLUS Rounded 1c | M PLUS 1p | Fira Code |
+| `business` | BIZ UDGothic | BIZ UDGothic | Roboto Mono |
+| `modern` | Montserrat | Noto Sans JP | JetBrains Mono |
+| `elegant` | Playfair Display | Shippori Mincho | Source Code Pro |
+| `handwritten` | Klee One | Klee One | Fira Code |
+
+#### カスタムフォントオブジェクト（FontObject）
+
+```yaml
+font:
+  heading: string  # Google Fontsフォント名
+  body: string     # Google Fontsフォント名
+  code: string     # 等幅フォント名
+```
+
+#### 利用可能なGoogle Fonts
+
+**日本語：**
+- Noto Sans JP, Noto Serif JP
+- M PLUS 1p, M PLUS Rounded 1c
+- Zen Maru Gothic, BIZ UDGothic
+- Shippori Mincho, Klee One
+
+**欧文：**
+- Inter, Roboto, Montserrat
+- Open Sans, Lato, Playfair Display
+
+**コード：**
+- Fira Code, Source Code Pro
+- JetBrains Mono, Roboto Mono
+
+### 5.4 header（HeaderObject）
 
 ```yaml
 header:
@@ -761,7 +801,7 @@ PDL は以下を規定しない。
 * PDL v0.x：実験的
 * PDL v1.0：後方互換保証
 
-FrameNote v0.4 は **PDL v0.4** に準拠する。
+FrameNote v0.4.1 は **PDL v0.4.1** に準拠する。
 
 ---
 
@@ -806,7 +846,7 @@ meta:
 slides:
   # タイトルスライド
   - template: title
-    title: "PDL v0.4 デモ"
+    title: "PDL v0.4.1 デモ"
     subtitle: "Presentation Description Language"
     author: "FrameNote"
     date: "2025"
@@ -866,6 +906,10 @@ slides:
 
 ## 付録C：更新履歴
 
+### v0.4.1
+
+* フォント選択UIの同期を修正
+
 ### v0.4
 
 * Markdown形式の `table` とアライメント追加
@@ -881,6 +925,8 @@ slides:
 * フローチャート/シーケンス図サイズ変更オプション追加
 * 8種類のスライドテンプレート追加
 * 10種類のプリセットテーマ追加
+* 7種類のフォントプリセット（Google Fonts）追加
+* カスタムフォント設定追加
 * プレースホルダ付きヘッダー/フッター追加
 
 ### v0.3

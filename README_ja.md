@@ -12,6 +12,7 @@ FrameNoteは、YAML形式のPDL（Presentation Description Language）を使用�
 - **Monaco Editor** - シンタックスハイライト、コード補完、スニペット
 - **リアルタイムプレビュー** - 即座に視覚的フィードバック
 - **10種類のテーマ** - default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
+- **7種類のフォントプリセット** - sans, serif, rounded, business, modern, elegant, handwritten（Google Fonts）
 
 ### テンプレート（8種類）
 - `title` - タイトルスライド（サブタイトル、著者、日付）
@@ -238,6 +239,35 @@ sequence:
 | rose | ピンク系 | ローズ |
 | midnight | ネイビー | バイオレット |
 
+## フォント
+
+### フォントプリセット
+
+| プリセット | 見出し | 本文 | 説明 |
+|-----------|--------|------|------|
+| sans | Noto Sans JP | Noto Sans JP | 標準ゴシック |
+| serif | Noto Serif JP | Noto Serif JP | 明朝体 |
+| rounded | M PLUS Rounded 1c | M PLUS 1p | 丸ゴシック |
+| business | BIZ UDGothic | BIZ UDGothic | ビジネス文書向け |
+| modern | Montserrat | Noto Sans JP | モダンスタイル |
+| elegant | Playfair Display | Shippori Mincho | エレガント |
+| handwritten | Klee One | Klee One | 手書き風 |
+
+### 使い方
+
+```yaml
+# プリセット（簡易）
+meta:
+  font: modern
+
+# カスタムフォント
+meta:
+  font:
+    heading: "Montserrat"
+    body: "Noto Sans JP"
+    code: "Fira Code"
+```
+
 ## キーボードショートカット
 
 | キー | アクション |
@@ -275,7 +305,11 @@ MIT License
 
 ## 更新履歴
 
-### v0.4（現在）
+### v0.4.1（現在）
+- フォント選択ドロップダウンの不具合を修正
+- フォント選択のUI/PDL同期を改善
+
+### v0.4
 - テーブル列アライメント（左/中央/右）
 - 自動列幅計算
 - tableStyle（colWidths, rowHeight）
@@ -287,6 +321,7 @@ MIT License
 - Mermaid風フローチャート
 - シーケンス図
 - フローチャート/シーケンス図サイズ変更
+- フォント選択（7プリセット＋カスタムGoogle Fonts）
 
 ### v0.3
 - 8種類のスライドテンプレート
