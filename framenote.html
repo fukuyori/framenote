@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrameNote v0.2 - Text-First Slide Tool</title>
+  <title>FrameNote v0.3 - Text-First Slide Tool</title>
+  <!-- Load all libraries BEFORE Monaco's AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Monaco loader MUST be loaded last to avoid AMD conflicts -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,19 +20,15 @@
       --bg-surface: #242424;
       --bg-hover: #2d2d2d;
       --border: #333;
-      --border-focus: #555;
-      --text-primary: #f5f5f5;
-      --text-secondary: #888;
+      --border-focus: #58a6ff;
+      --text-primary: #e6e6e6;
+      --text-secondary: #999;
       --text-muted: #666;
-      --accent: #3b82f6;
-      --accent-hover: #60a5fa;
-      --accent-dim: rgba(59, 130, 246, 0.15);
-      --success: #22c55e;
-      --warning: #eab308;
-      --error: #ef4444;
-      --slide-bg: #ffffff;
-      --slide-text: #1a1a1a;
-      --slide-accent: #3b82f6;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --error: #f85149;
     }
 
     * {
@@ -45,17 +45,9 @@
       overflow: hidden;
     }
 
-    /* App Layout */
-    .app {
-      display: grid;
-      grid-template-rows: 48px 1fr;
-      grid-template-columns: 240px 1fr 1fr;
-      height: 100vh;
-    }
-
     /* Header */
-    header {
-      grid-column: 1 / -1;
+    .header {
+      height: 48px;
       background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -73,29 +65,25 @@
     .logo-icon {
       width: 28px;
       height: 28px;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      background: linear-gradient(135deg, var(--accent), #a855f7);
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 13px;
-      color: #fff;
+      font-size: 14px;
+      color: white;
     }
 
     .logo h1 {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
-      letter-spacing: -0.3px;
     }
 
     .logo-version {
       font-size: 11px;
       color: var(--text-muted);
-      background: var(--bg-surface);
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 4px;
+      font-weight: 400;
     }
 
     .header-actions {
@@ -120,13 +108,13 @@
 
     .btn:hover {
       background: var(--bg-hover);
-      border-color: var(--border-focus);
+      border-color: var(--text-muted);
     }
 
     .btn-primary {
       background: var(--accent);
       border-color: var(--accent);
-      color: #fff;
+      color: white;
     }
 
     .btn-primary:hover {
@@ -134,8 +122,62 @@
       border-color: var(--accent-hover);
     }
 
-    /* Sidebar - Outline */
+    .theme-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 16px;
+      padding-right: 16px;
+      border-right: 1px solid var(--border);
+    }
+
+    .theme-selector label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    #theme-select {
+      padding: 6px 24px 6px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background-color: var(--bg-surface);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 4px center;
+      background-repeat: no-repeat;
+      background-size: 16px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+      min-width: 120px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    #theme-select:hover {
+      border-color: var(--text-muted);
+    }
+
+    #theme-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    #theme-select option {
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      padding: 8px;
+    }
+
+    /* Main Layout */
+    .main {
+      display: flex;
+      height: calc(100vh - 48px);
+    }
+
+    /* Sidebar */
     .sidebar {
+      width: 200px;
       background: var(--bg-panel);
       border-right: 1px solid var(--border);
       display: flex;
@@ -143,27 +185,13 @@
     }
 
     .sidebar-header {
-      padding: 12px 16px;
+      padding: 12px;
       border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .sidebar-title {
       font-size: 11px;
       font-weight: 600;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: var(--text-secondary);
-    }
-
-    .slide-count {
-      font-size: 11px;
-      color: var(--text-muted);
-      background: var(--bg-surface);
-      padding: 2px 8px;
-      border-radius: 10px;
     }
 
     .outline-list {
@@ -173,58 +201,53 @@
     }
 
     .outline-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 6px;
+      padding: 8px 10px;
+      border-radius: 4px;
       cursor: pointer;
-      transition: all 0.1s;
-      margin-bottom: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
     }
 
     .outline-item:hover {
-      background: var(--bg-surface);
+      background: var(--bg-hover);
+      color: var(--text-primary);
     }
 
     .outline-item.active {
-      background: var(--accent-dim);
+      background: var(--bg-surface);
+      color: var(--accent);
     }
 
-    .outline-item.error {
-      border-left: 2px solid var(--error);
+    .outline-item.has-error {
+      color: var(--error);
     }
 
     .outline-number {
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 10px;
       color: var(--text-muted);
-      min-width: 20px;
+      min-width: 18px;
     }
 
-    .outline-title {
-      font-size: 12px;
-      color: var(--text-primary);
-      line-height: 1.4;
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    .outline-item.active .outline-number,
-    .outline-item.active .outline-title {
-      color: var(--accent);
+    .outline-template {
+      font-size: 9px;
+      padding: 2px 5px;
+      background: var(--bg-hover);
+      border-radius: 3px;
+      color: var(--text-muted);
+      margin-left: auto;
     }
 
     /* Editor Panel */
     .editor-panel {
-      background: var(--bg-dark);
+      flex: 1;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid var(--border);
+      min-width: 0;
     }
 
     .editor-tabs {
@@ -244,10 +267,11 @@
 
     .editor-tab:hover {
       color: var(--text-primary);
+      background: var(--bg-hover);
     }
 
     .editor-tab.active {
-      color: var(--text-primary);
+      color: var(--accent);
       border-bottom-color: var(--accent);
     }
 
@@ -265,43 +289,37 @@
       flex: 1;
     }
 
-    /* Image Manager */
-    .image-manager {
-      flex: 1;
+    /* Images Panel */
+    .images-panel {
       padding: 16px;
       overflow-y: auto;
     }
 
-    .drop-zone {
+    .image-dropzone {
       border: 2px dashed var(--border);
       border-radius: 8px;
-      padding: 24px;
+      padding: 32px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       margin-bottom: 16px;
     }
 
-    .drop-zone:hover,
-    .drop-zone.dragover {
+    .image-dropzone:hover,
+    .image-dropzone.dragover {
       border-color: var(--accent);
-      background: var(--accent-dim);
+      background: rgba(88, 166, 255, 0.05);
     }
 
-    .drop-zone-icon {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .drop-zone-text {
-      font-size: 12px;
+    .image-dropzone-text {
+      font-size: 13px;
       color: var(--text-secondary);
     }
 
     .image-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
     }
 
     .image-item {
@@ -309,14 +327,13 @@
       aspect-ratio: 1;
       border-radius: 6px;
       overflow: hidden;
-      border: 1px solid var(--border);
       cursor: pointer;
+      border: 2px solid transparent;
       transition: all 0.15s;
     }
 
     .image-item:hover {
       border-color: var(--accent);
-      transform: scale(1.02);
     }
 
     .image-item img {
@@ -325,74 +342,61 @@
       object-fit: cover;
     }
 
-    .image-item-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.15s;
-      padding: 4px;
-    }
-
-    .image-item:hover .image-item-overlay {
-      opacity: 1;
-    }
-
     .image-item-name {
-      font-size: 9px;
-      color: #fff;
-      text-align: center;
-      word-break: break-all;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px 6px;
+      background: rgba(0, 0, 0, 0.8);
+      font-size: 10px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .image-item-delete {
       position: absolute;
       top: 4px;
       right: 4px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--error);
-      color: #fff;
+      width: 20px;
+      height: 20px;
+      background: rgba(248, 81, 73, 0.9);
       border: none;
+      border-radius: 4px;
+      color: white;
       cursor: pointer;
-      font-size: 10px;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transition: opacity 0.15s;
+      font-size: 12px;
     }
 
     .image-item:hover .image-item-delete {
-      opacity: 1;
+      display: flex;
     }
 
     /* Preview Panel */
     .preview-panel {
+      width: 50%;
       background: var(--bg-dark);
+      border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
     }
 
     .preview-header {
+      padding: 10px 16px;
       background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
     }
 
     .preview-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 12px;
       color: var(--text-secondary);
     }
 
@@ -413,43 +417,41 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
       transition: all 0.15s;
     }
 
-    .preview-nav-btn:hover:not(:disabled) {
+    .preview-nav-btn:hover {
       background: var(--bg-hover);
     }
 
     .preview-nav-btn:disabled {
-      opacity: 0.3;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
-    .preview-indicator {
-      font-size: 11px;
-      color: var(--text-muted);
-      min-width: 50px;
+    .preview-page {
+      font-size: 12px;
+      color: var(--text-secondary);
+      min-width: 60px;
       text-align: center;
     }
 
     .preview-container {
       flex: 1;
+      padding: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      overflow: auto;
+      overflow: hidden;
     }
 
-    /* SVG Slide */
     .slide-frame {
       width: 100%;
-      max-width: 720px;
+      max-width: 800px;
       aspect-ratio: 16 / 9;
-      background: var(--slide-bg);
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
       overflow: hidden;
     }
 
@@ -458,71 +460,63 @@
       height: 100%;
     }
 
-    /* Diagnostics Panel */
-    .diagnostics {
+    /* Validation Panel */
+    .validation-panel {
       background: var(--bg-panel);
       border-top: 1px solid var(--border);
-      max-height: 120px;
+      max-height: 150px;
       overflow-y: auto;
     }
 
-    .diagnostics-header {
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .validation-header {
+      padding: 8px 12px;
       font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
       border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--bg-panel);
+      display: flex;
+      justify-content: space-between;
     }
 
-    .status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .validation-list {
+      padding: 8px;
     }
 
-    .status-indicator.success { background: var(--success); }
-    .status-indicator.warning { background: var(--warning); }
-    .status-indicator.error { background: var(--error); }
-
-    .diagnostics-list {
-      padding: 8px 16px;
-    }
-
-    .diagnostic-item {
+    .validation-item {
+      padding: 6px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      margin-bottom: 4px;
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      padding: 4px 0;
-      font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
     }
 
-    .diagnostic-code {
-      font-weight: 600;
+    .validation-item.error {
+      background: rgba(248, 81, 73, 0.1);
+      color: var(--error);
     }
 
-    .diagnostic-code.error { color: var(--error); }
-    .diagnostic-code.warning { color: var(--warning); }
-
-    .diagnostic-where {
-      color: var(--accent);
+    .validation-item.warning {
+      background: rgba(210, 153, 34, 0.1);
+      color: var(--warning);
     }
 
-    .diagnostic-msg {
-      color: var(--text-secondary);
+    .validation-item.success {
+      background: rgba(63, 185, 80, 0.1);
+      color: var(--success);
     }
 
     /* Slideshow Modal */
     .slideshow-modal {
-      display: none;
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: #000;
       z-index: 1000;
+      display: none;
       flex-direction: column;
     }
 
@@ -530,124 +524,82 @@
       display: flex;
     }
 
-    .slideshow-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      border: none;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 10;
-      transition: background 0.2s;
-    }
-
-    .slideshow-close:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .slideshow-container {
+    .slideshow-content {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 60px;
+      padding: 40px;
     }
 
-    .slideshow-frame {
+    .slideshow-slide {
       width: 100%;
-      max-width: 1400px;
+      max-width: 1200px;
       aspect-ratio: 16 / 9;
-      background: var(--slide-bg);
-      border-radius: 12px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      background: white;
+      border-radius: 8px;
       overflow: hidden;
     }
 
-    .slideshow-frame svg {
+    .slideshow-slide svg {
       width: 100%;
       height: 100%;
     }
 
-    .slideshow-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
+    .slideshow-controls {
       padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
     }
 
-    .slideshow-nav button {
+    .slideshow-btn {
       padding: 10px 20px;
       border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 13px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: white;
+      font-size: 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
-    .slideshow-nav button:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.2);
+    .slideshow-btn:hover {
+      background: #2d2d2d;
     }
 
-    .slideshow-nav button:disabled {
-      opacity: 0.3;
-    }
-
-    .slideshow-indicator {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 13px;
-      min-width: 60px;
+    .slideshow-page {
+      font-size: 14px;
+      color: #999;
+      min-width: 80px;
       text-align: center;
     }
 
-    /* Empty State */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      text-align: center;
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 60px;
+      right: 16px;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 100;
+      animation: slideIn 0.2s ease;
     }
 
-    .empty-state-icon {
-      font-size: 40px;
-      margin-bottom: 12px;
-      opacity: 0.5;
+    .notification.success {
+      border-color: var(--success);
+      color: var(--success);
     }
 
-    .empty-state-text {
-      font-size: 13px;
+    .notification.error {
+      border-color: var(--error);
+      color: var(--error);
     }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--border-focus);
-    }
-
-    /* Notification Animation */
     @keyframes slideIn {
       from {
         transform: translateX(100%);
@@ -659,288 +611,623 @@
       }
     }
 
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(100%);
-        opacity: 0;
-      }
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-focus);
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="logo">
-        <div class="logo-icon">F</div>
-        <h1>FrameNote</h1>
-        <span class="logo-version">v0.2.1</span>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">F</div>
+      <h1>FrameNote <span class="logo-version">v0.3</span></h1>
+    </div>
+    <div class="header-actions">
+      <div class="theme-selector">
+        <label for="theme-select">Theme:</label>
+        <select id="theme-select">
+          <option value="default">Default</option>
+          <option value="corporate">Corporate</option>
+          <option value="minimal">Minimal</option>
+          <option value="dark">Dark</option>
+          <option value="nature">Nature</option>
+          <option value="sunset">Sunset</option>
+          <option value="ocean">Ocean</option>
+          <option value="lavender">Lavender</option>
+          <option value="rose">Rose</option>
+          <option value="midnight">Midnight</option>
+        </select>
       </div>
-      <div class="header-actions">
-        <button class="btn" onclick="openProject()">📂 Open</button>
-        <button class="btn" onclick="saveProject()">💾 Save</button>
-        <button class="btn" onclick="loadSample()">📄 Sample</button>
-        <button class="btn" onclick="exportYAML()">📝 YAML</button>
-        <button class="btn btn-primary" onclick="startSlideshow()">▶ Present</button>
-        <input type="file" id="project-input" accept=".fnote,.zip" hidden>
-      </div>
-    </header>
+      <button class="btn" onclick="openProject()">📂 Open</button>
+      <button class="btn" onclick="saveProject()">💾 Save</button>
+      <button class="btn" onclick="exportPDF()">📄 PDF</button>
+      <button class="btn" onclick="exportPPTX()">📊 PPTX</button>
+      <button class="btn" onclick="exportHTML()">🌐 HTML</button>
+      <button class="btn" onclick="loadSample()">📋 Sample</button>
+      <button class="btn btn-primary" onclick="startSlideshow()">▶ Present</button>
+    </div>
+  </header>
 
+  <main class="main">
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title">Outline</span>
-        <span class="slide-count" id="slide-count">0 slides</span>
-      </div>
+      <div class="sidebar-header">Outline</div>
       <div class="outline-list" id="outline-list"></div>
     </aside>
 
-    <main class="editor-panel">
+    <section class="editor-panel">
       <div class="editor-tabs">
-        <div class="editor-tab active" data-tab="code">PDL Editor</div>
+        <div class="editor-tab active" data-tab="editor">PDL Editor</div>
         <div class="editor-tab" data-tab="images">Images</div>
       </div>
-      <div class="editor-content active" id="tab-code">
+      
+      <div class="editor-content active" data-content="editor">
         <div id="monaco-container"></div>
       </div>
-      <div class="editor-content" id="tab-images">
-        <div class="image-manager">
-          <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone-icon">📁</div>
-            <div class="drop-zone-text">Drop images here or click to upload</div>
+      
+      <div class="editor-content" data-content="images">
+        <div class="images-panel">
+          <div class="image-dropzone" id="image-dropzone">
+            <div class="image-dropzone-text">
+              Drop images here or click to upload
+            </div>
           </div>
-          <input type="file" id="file-input" accept="image/*" multiple hidden>
           <div class="image-grid" id="image-grid"></div>
         </div>
       </div>
-    </main>
+
+      <div class="validation-panel">
+        <div class="validation-header">
+          <span>Validation</span>
+          <span id="validation-count"></span>
+        </div>
+        <div class="validation-list" id="validation-list"></div>
+      </div>
+    </section>
 
     <section class="preview-panel">
       <div class="preview-header">
         <span class="preview-title">Preview</span>
         <div class="preview-nav">
-          <button class="preview-nav-btn" id="prev-btn" onclick="prevSlide()">◀</button>
-          <span class="preview-indicator" id="preview-indicator">0 / 0</span>
-          <button class="preview-nav-btn" id="next-btn" onclick="nextSlide()">▶</button>
+          <button class="preview-nav-btn" onclick="prevSlide()">◀</button>
+          <span class="preview-page" id="preview-page">1 / 1</span>
+          <button class="preview-nav-btn" onclick="nextSlide()">▶</button>
         </div>
       </div>
-      <div class="preview-container" id="preview-container">
-        <div class="empty-state">
-          <div class="empty-state-icon">📽️</div>
-          <div class="empty-state-text">Write PDL to preview slides</div>
-        </div>
+      <div class="preview-container">
+        <div class="slide-frame" id="slide-frame"></div>
       </div>
     </section>
-
-    <footer class="diagnostics" style="grid-column: 2 / -1;">
-      <div class="diagnostics-header">
-        <div class="status-indicator success" id="status-dot"></div>
-        <span id="status-text">Ready</span>
-      </div>
-      <div class="diagnostics-list" id="diagnostics-list"></div>
-    </footer>
-  </div>
+  </main>
 
   <div class="slideshow-modal" id="slideshow-modal">
-    <button class="slideshow-close" onclick="closeSlideshow()">✕</button>
-    <div class="slideshow-container">
-      <div class="slideshow-frame" id="slideshow-frame"></div>
+    <div class="slideshow-content">
+      <div class="slideshow-slide" id="slideshow-slide"></div>
     </div>
-    <div class="slideshow-nav">
-      <button id="slideshow-prev" onclick="slideshowPrev()">◀ Prev</button>
-      <span class="slideshow-indicator" id="slideshow-indicator">1 / 1</span>
-      <button id="slideshow-next" onclick="slideshowNext()">Next ▶</button>
+    <div class="slideshow-controls">
+      <button class="slideshow-btn" onclick="prevSlideshowSlide()">◀ Prev</button>
+      <span class="slideshow-page" id="slideshow-page">1 / 1</span>
+      <button class="slideshow-btn" onclick="nextSlideshowSlide()">Next ▶</button>
+      <button class="slideshow-btn" onclick="endSlideshow()">✕ Exit</button>
     </div>
   </div>
 
+  <input type="file" id="file-input" accept=".fnote,.yaml,.yml" style="display:none">
+  <input type="file" id="image-input" accept="image/*" multiple style="display:none">
+
   <script>
-    // ========================================
-    // State
-    // ========================================
-    let pdlData = null;
-    let currentSlide = 0;
-    let slideshowIndex = 0;
-    let images = {};
-    let issues = [];
+    // Theme definitions - Modern color schemes
+    const THEMES = {
+      default: {
+        name: 'Default',
+        background: '#fafbfc',
+        accent: '#6366f1',
+        title: '#1e1b4b',
+        text: '#334155',
+        bullet: '#6366f1',
+        muted: '#64748b',
+        headerBg: '#f1f5f9',
+        footerBg: '#f1f5f9'
+      },
+      corporate: {
+        name: 'Corporate',
+        background: '#f8fafc',
+        accent: '#0ea5e9',
+        title: '#0c4a6e',
+        text: '#334155',
+        bullet: '#0ea5e9',
+        muted: '#64748b',
+        headerBg: '#e0f2fe',
+        footerBg: '#e0f2fe'
+      },
+      minimal: {
+        name: 'Minimal',
+        background: '#ffffff',
+        accent: '#18181b',
+        title: '#09090b',
+        text: '#3f3f46',
+        bullet: '#71717a',
+        muted: '#a1a1aa',
+        headerBg: '#fafafa',
+        footerBg: '#fafafa'
+      },
+      dark: {
+        name: 'Dark',
+        background: '#0f172a',
+        accent: '#38bdf8',
+        title: '#f1f5f9',
+        text: '#cbd5e1',
+        bullet: '#38bdf8',
+        muted: '#64748b',
+        headerBg: '#1e293b',
+        footerBg: '#1e293b'
+      },
+      nature: {
+        name: 'Nature',
+        background: '#f0fdf4',
+        accent: '#16a34a',
+        title: '#14532d',
+        text: '#365314',
+        bullet: '#22c55e',
+        muted: '#65a30d',
+        headerBg: '#dcfce7',
+        footerBg: '#dcfce7'
+      },
+      sunset: {
+        name: 'Sunset',
+        background: '#fff7ed',
+        accent: '#f97316',
+        title: '#9a3412',
+        text: '#431407',
+        bullet: '#fb923c',
+        muted: '#78716c',
+        headerBg: '#ffedd5',
+        footerBg: '#ffedd5'
+      },
+      ocean: {
+        name: 'Ocean',
+        background: '#f0f9ff',
+        accent: '#0284c7',
+        title: '#0c4a6e',
+        text: '#1e3a5f',
+        bullet: '#06b6d4',
+        muted: '#64748b',
+        headerBg: '#e0f2fe',
+        footerBg: '#e0f2fe'
+      },
+      lavender: {
+        name: 'Lavender',
+        background: '#faf5ff',
+        accent: '#a855f7',
+        title: '#581c87',
+        text: '#3b0764',
+        bullet: '#c084fc',
+        muted: '#6b7280',
+        headerBg: '#f3e8ff',
+        footerBg: '#f3e8ff'
+      },
+      rose: {
+        name: 'Rose',
+        background: '#fff1f2',
+        accent: '#f43f5e',
+        title: '#881337',
+        text: '#4c0519',
+        bullet: '#fb7185',
+        muted: '#71717a',
+        headerBg: '#ffe4e6',
+        footerBg: '#ffe4e6'
+      },
+      midnight: {
+        name: 'Midnight',
+        background: '#020617',
+        accent: '#a78bfa',
+        title: '#e2e8f0',
+        text: '#94a3b8',
+        bullet: '#a78bfa',
+        muted: '#475569',
+        headerBg: '#0f172a',
+        footerBg: '#0f172a'
+      }
+    };
+
+    // Global state
     let monacoEditor = null;
+    let currentSlide = 0;
+    let parsedData = null;
+    let uploadedImages = new Map();
+    let slideshowSlide = 0;
+    let currentTheme = 'default';
+    let themeChangedByUI = false;  // フラグ: UIセレクターからの変更か
 
-    // ========================================
-    // Monaco Editor Setup
-    // ========================================
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+    // Theme functions
+    function changeTheme(themeName) {
+      themeChangedByUI = true;
+      currentTheme = themeName;
+      parseAndRender();
+    }
 
-    // Disable web workers to avoid CORS issues in CDN environment
+    function getThemeColors(meta) {
+      // Priority: slide format > meta format > UI selector > default
+      const uiTheme = THEMES[currentTheme] || THEMES.default;
+      
+      // Apply meta.format overrides
+      const format = meta?.format || {};
+      
+      return {
+        background: format.background?.color || uiTheme.background,
+        accent: format.accent?.color || uiTheme.accent,
+        title: format.title?.color || uiTheme.title,
+        titleSize: format.title?.size || 48,
+        titleWeight: format.title?.weight || '700',
+        text: format.text?.color || uiTheme.text,
+        textSize: format.text?.size || 28,
+        bullet: format.bullet?.color || uiTheme.bullet,
+        muted: uiTheme.muted,
+        headerBg: uiTheme.headerBg,
+        footerBg: uiTheme.footerBg
+      };
+    }
+
+    // Initialize Monaco Editor
+    require.config({ 
+      paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }
+    });
+    
+    // Properly configure Monaco to not use web workers
     window.MonacoEnvironment = {
-      getWorker: function() {
-        return null;
+      getWorkerUrl: function() {
+        return 'data:text/javascript;charset=utf-8,' + encodeURIComponent('self.onmessage = function() {}');
       }
     };
 
     require(['vs/editor/editor.main'], function() {
       // Register PDL language
       monaco.languages.register({ id: 'pdl' });
-
-      // Syntax highlighting
+      
       monaco.languages.setMonarchTokensProvider('pdl', {
         tokenizer: {
           root: [
-            [/#.*$/, 'comment'],
-            [/\b(meta|slides|title|body|text|figure|caption|style|notes|src|alt|split|ref|layout|size|weight|align|tone|importance|diagram|header|footer|show|left|center|right|logo|project|author|date|version|format|font|color|boxColor|textColor|arrowColor|boxes)\b/, 'keyword'],
-            [/\b(center|stack|horizontal|vertical|small|medium|large|normal|bold|low|high|text|figure_caption|figure_bullets|figure_reference|true|false|italic)\b/, 'type'],
-            [/\{[a-z]+\}/, 'variable'],
-            [/#[0-9a-fA-F]{3,8}\b/, 'number'],
+            [/^meta:/, 'keyword'],
+            [/^slides:/, 'keyword'],
+            [/^\s*-\s+title:/, 'keyword'],
+            [/^\s*-\s+template:/, 'keyword.template'],
+            [/^\s+(template|title|subtitle|body|style|figure|caption|text|notes|format|quote|author|source|contact|message|items|events|left|right|label|date):/, 'keyword'],
+            [/^\s+(header|footer|show|logo|center|theme):/, 'keyword.meta'],
+            [/^\s+(project|version):/, 'keyword.meta'],
             [/"[^"]*"/, 'string'],
             [/'[^']*'/, 'string'],
-            [/:\s*/, 'delimiter'],
-            [/-\s+/, 'delimiter'],
+            [/#[0-9a-fA-F]{3,8}/, 'number.hex'],
             [/\d+/, 'number'],
+            [/#.*$/, 'comment'],
           ]
         }
       });
 
-      // Theme
       monaco.editor.defineTheme('framenote-dark', {
         base: 'vs-dark',
         inherit: true,
         rules: [
-          { token: 'keyword', foreground: '60a5fa', fontStyle: 'bold' },
-          { token: 'type', foreground: 'a78bfa' },
-          { token: 'string', foreground: '4ade80' },
-          { token: 'comment', foreground: '666666' },
-          { token: 'delimiter', foreground: '888888' },
-          { token: 'number', foreground: 'fbbf24' },
-          { token: 'variable', foreground: 'f472b6' },
+          { token: 'keyword', foreground: '58a6ff' },
+          { token: 'keyword.template', foreground: 'a855f7' },
+          { token: 'keyword.meta', foreground: '3fb950' },
+          { token: 'string', foreground: 'ffa657' },
+          { token: 'number', foreground: 'ff7b72' },
+          { token: 'number.hex', foreground: 'd2a8ff' },
+          { token: 'comment', foreground: '8b949e' },
         ],
         colors: {
           'editor.background': '#0f0f0f',
-          'editor.foreground': '#f5f5f5',
-          'editor.lineHighlightBackground': '#1a1a1a',
-          'editorCursor.foreground': '#3b82f6',
-          'editor.selectionBackground': '#3b82f640',
+          'editor.foreground': '#e6e6e6',
+          'editorLineNumber.foreground': '#666666',
+          'editorCursor.foreground': '#58a6ff',
+          'editor.selectionBackground': '#264f78',
         }
       });
 
-      // Completions
+      // Completion provider - Context-aware snippets + keywords
       monaco.languages.registerCompletionItemProvider('pdl', {
-        provideCompletionItems: (model, position) => {
-          const suggestions = [
-            // Snippets
+        triggerCharacters: [' ', '\n'],
+        provideCompletionItems: function(model, position) {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn
+          };
+          
+          const lineContent = model.getLineContent(position.lineNumber);
+          const textBefore = model.getValueInRange({
+            startLineNumber: 1, startColumn: 1,
+            endLineNumber: position.lineNumber, endColumn: position.column
+          });
+          
+          // Context detection
+          function getContext() {
+            // 行頭で「- 」の後か
+            if (/^\s*-\s+\w*$/.test(lineContent)) return 'new-slide';
+            
+            // 行頭で「- 」を入力しようとしているか
+            if (/^\s*-\s*$/.test(lineContent)) return 'new-slide';
+            
+            // slides: の後の空行か
+            const lines = textBefore.split('\n');
+            const lastNonEmptyLine = lines.slice().reverse().find(l => l.trim().length > 0);
+            if (lastNonEmptyLine && /^slides:\s*$/.test(lastNonEmptyLine)) return 'new-slide';
+            
+            // meta: の中か（slides: より前）
+            if (/^meta:/m.test(textBefore)) {
+              const afterMeta = textBefore.split(/^meta:/m)[1] || '';
+              if (!/^slides:/m.test(afterMeta)) return 'in-meta';
+            }
+            
+            // body: の中か（直近5行以内にbody:がある）
+            const recentLines = lines.slice(-5).join('\n');
+            if (/body:\s*$/m.test(recentLines)) return 'in-body';
+            
+            // ファイル先頭または空の状態
+            if (textBefore.trim() === '' || textBefore.trim() === word.word) return 'file-start';
+            
+            return 'general';
+          }
+          
+          const context = getContext();
+          const suggestions = [];
+          
+          // Slide snippets (for new-slide context)
+          const slideSnippets = [
             {
-              label: 'slide',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: '- title: ${1:Title}\n  body:\n    text:\n      - ${2:Item}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Create a new slide'
+              label: '📄 slide (basic)',
+              insertText: 'title: ${1:Title}\n  body:\n    text:\n      - ${2:Item}',
+              detail: 'Basic slide with text'
             },
             {
-              label: 'slide-figure',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: '- title: ${1:Title}\n  body:\n    style: figure_caption\n    figure: ${2:image.png}\n    caption: ${3:Caption}\n    text:\n      - ${4:Description}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Slide with figure'
+              label: '📄 slide-figure',
+              insertText: 'title: ${1:Title}\n  body:\n    style: figure_caption\n    figure: ${2:image.png}\n    caption: ${3:Caption}',
+              detail: 'Slide with figure'
             },
             {
-              label: 'slide-split',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: '- title: ${1:Title}\n  body:\n    style: split\n    split:\n      a:\n        text:\n          - ${2:Left content}\n      b:\n        text:\n          - ${3:Right content}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Split layout slide'
+              label: '📄 slide-split',
+              insertText: 'title: ${1:Title}\n  body:\n    style: split\n    direction: horizontal\n    ratio: "1:1"\n    left:\n      text:\n        - ${2:Left}\n    right:\n      text:\n        - ${3:Right}',
+              detail: 'Split layout slide'
             },
             {
-              label: 'diagram',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'diagram:\n  boxes:\n    - ${1:Step 1}\n    - ${2:Step 2}\n    - ${3:Step 3}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Box-arrow diagram'
+              label: '📄 slide-diagram',
+              insertText: 'title: ${1:Title}\n  body:\n    diagram:\n      type: box-arrow\n      direction: horizontal\n      boxes:\n        - ${2:Step 1}\n        - ${3:Step 2}\n        - ${4:Step 3}',
+              detail: 'Slide with diagram'
             },
             {
-              label: 'header-footer',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'header:\n    show: true\n    text: "{project}"\n  \n  footer:\n    show: true\n    left: "{author}"\n    center: "{date}"\n    right: "{page} / {total}"',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Header and footer configuration'
+              label: '🎬 template: title',
+              insertText: 'template: title\n  title: "${1:Presentation Title}"\n  subtitle: "${2:Subtitle}"\n  author: "${3:Author}"\n  date: "${4:2025}"',
+              detail: 'Title slide'
             },
             {
-              label: 'slide-format',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: '- title: ${1:Title}\n  format:\n    title:\n      color: "${2:#dc2626}"\n    bullet:\n      color: "${3:#dc2626}"\n  body:\n    text:\n      - ${4:Item}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Slide with custom format'
+              label: '📑 template: section',
+              insertText: 'template: section\n  title: "${1:Section Title}"\n  subtitle: "${2:Subtitle}"',
+              detail: 'Section divider'
             },
             {
-              label: 'format',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'format:\n    title:\n      size: ${1:48}\n      weight: ${2:700}\n      color: "${3:#1a1a1a}"\n    body:\n      size: ${4:24}\n      weight: ${5:400}\n      color: "${6:#333333}"\n    bullet:\n      color: "${7:#3b82f6}"\n      size: ${8:6}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Text format configuration'
+              label: '💬 template: quote',
+              insertText: 'template: quote\n  quote: "${1:Quote text}"\n  author: "${2:Author}"\n  source: "${3:Source}"',
+              detail: 'Quote slide'
             },
             {
-              label: 'format-full',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: `format:
-    title:
-      font: "'Inter', sans-serif"
-      size: 48
-      weight: 700
-      color: "#1a1a1a"
-    body:
-      font: "'Noto Sans JP', sans-serif"
-      size: 24
-      weight: 400
-      color: "#333333"
-    bullet:
-      color: "#3b82f6"
-      size: 6
-    caption:
-      size: 16
-      color: "#666666"
-    note:
-      size: 14
-      style: italic
-      color: "#888888"
-    diagram:
-      boxColor: "#3b82f6"
-      textColor: "#ffffff"
-      arrowColor: "#666666"`,
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Full format configuration with all options'
+              label: '❓ template: qa',
+              insertText: 'template: qa\n  title: "${1:Questions?}"\n  contact: "${2:email@example.com}"',
+              detail: 'Q&A slide'
             },
-            // Keywords
-            { label: 'meta', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'meta:\n  project: ' },
-            { label: 'slides', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'slides:\n  ' },
-            { label: 'title', kind: monaco.languages.CompletionItemKind.Property, insertText: 'title: ' },
-            { label: 'body', kind: monaco.languages.CompletionItemKind.Property, insertText: 'body:\n    ' },
-            { label: 'text', kind: monaco.languages.CompletionItemKind.Property, insertText: 'text:\n      - ' },
-            { label: 'figure', kind: monaco.languages.CompletionItemKind.Property, insertText: 'figure: ' },
-            { label: 'caption', kind: monaco.languages.CompletionItemKind.Property, insertText: 'caption: ' },
-            { label: 'style', kind: monaco.languages.CompletionItemKind.Property, insertText: 'style: ' },
-            { label: 'notes', kind: monaco.languages.CompletionItemKind.Property, insertText: 'notes: ' },
-            { label: 'header', kind: monaco.languages.CompletionItemKind.Property, insertText: 'header:\n    show: true\n    text: ' },
-            { label: 'footer', kind: monaco.languages.CompletionItemKind.Property, insertText: 'footer:\n    show: true\n    left: \n    center: \n    right: ' },
-            { label: 'size', kind: monaco.languages.CompletionItemKind.Property, insertText: 'size: ' },
-            { label: 'weight', kind: monaco.languages.CompletionItemKind.Property, insertText: 'weight: ' },
-            { label: 'color', kind: monaco.languages.CompletionItemKind.Property, insertText: 'color: "#"' },
-            { label: 'font', kind: monaco.languages.CompletionItemKind.Property, insertText: 'font: "' },
-            { label: 'boxColor', kind: monaco.languages.CompletionItemKind.Property, insertText: 'boxColor: "#"' },
-            { label: 'textColor', kind: monaco.languages.CompletionItemKind.Property, insertText: 'textColor: "#"' },
-            { label: 'arrowColor', kind: monaco.languages.CompletionItemKind.Property, insertText: 'arrowColor: "#"' },
-            // Values
-            { label: 'center', kind: monaco.languages.CompletionItemKind.Value, insertText: 'center' },
-            { label: 'stack', kind: monaco.languages.CompletionItemKind.Value, insertText: 'stack' },
-            { label: 'split', kind: monaco.languages.CompletionItemKind.Value, insertText: 'split' },
-            { label: 'figure_caption', kind: monaco.languages.CompletionItemKind.Value, insertText: 'figure_caption' },
-            { label: 'figure_bullets', kind: monaco.languages.CompletionItemKind.Value, insertText: 'figure_bullets' },
-            { label: 'italic', kind: monaco.languages.CompletionItemKind.Value, insertText: 'italic' },
-            { label: 'normal', kind: monaco.languages.CompletionItemKind.Value, insertText: 'normal' },
-            // Placeholders
-            { label: '{project}', kind: monaco.languages.CompletionItemKind.Variable, insertText: '{project}', documentation: 'Project name from meta' },
-            { label: '{author}', kind: monaco.languages.CompletionItemKind.Variable, insertText: '{author}', documentation: 'Author from meta' },
-            { label: '{date}', kind: monaco.languages.CompletionItemKind.Variable, insertText: '{date}', documentation: 'Date from meta' },
-            { label: '{page}', kind: monaco.languages.CompletionItemKind.Variable, insertText: '{page}', documentation: 'Current page number' },
-            { label: '{total}', kind: monaco.languages.CompletionItemKind.Variable, insertText: '{total}', documentation: 'Total number of pages' },
+            {
+              label: '🙏 template: thanks',
+              insertText: 'template: thanks\n  title: "${1:Thank You!}"\n  message: "${2:Message}"\n  contact: "${3:URL}"',
+              detail: 'Thanks slide'
+            },
+            {
+              label: '📋 template: agenda',
+              insertText: 'template: agenda\n  title: "${1:Agenda}"\n  items:\n    - "${2:Item 1}"\n    - "${3:Item 2}"\n    - "${4:Item 3}"',
+              detail: 'Agenda slide'
+            },
+            {
+              label: '⚖️ template: comparison',
+              insertText: 'template: comparison\n  title: "${1:Comparison}"\n  left:\n    label: "${2:Before}"\n    items:\n      - "${3:Item}"\n  right:\n    label: "${4:After}"\n    items:\n      - "${5:Item}"',
+              detail: 'Comparison slide'
+            },
+            {
+              label: '📅 template: timeline',
+              insertText: 'template: timeline\n  title: "${1:Timeline}"\n  events:\n    - date: "${2:Q1}"\n      title: "${3:Phase 1}"\n    - date: "${4:Q2}"\n      title: "${5:Phase 2}"',
+              detail: 'Timeline slide'
+            },
           ];
+          
+          // Meta snippet
+          const metaSnippet = {
+            label: '⚙️ meta',
+            insertText: 'meta:\n  project: "${1:Project Name}"\n  author: "${2:Author}"\n  date: "${3:2025-01-01}"\n  version: "${4:1.0}"\n  theme: ${5:default}\n\nslides:',
+            detail: 'Meta section with slides'
+          };
+          
+          // Header-footer snippet
+          const headerFooterSnippet = {
+            label: '📝 header-footer',
+            insertText: 'header:\n    show: true\n    text: "{project}"\n    format:\n      color: "#666666"\n      size: 28\nfooter:\n    show: true\n    left: "{author}"\n    right: "{page} / {total}"\n    format:\n      color: "#999999"\n      size: 28',
+            detail: 'Header and footer config'
+          };
+          
+          // Format snippet
+          const formatSnippet = {
+            label: '🎨 format',
+            insertText: 'format:\n    accent:\n      color: "${1:#3b82f6}"\n    title:\n      color: "${2:#1a1a1a}"\n      size: ${3:48}\n    bullet:\n      color: "${4:#3b82f6}"',
+            detail: 'Format settings'
+          };
+          
+          // Diagram snippet
+          const diagramSnippet = {
+            label: '📊 diagram',
+            insertText: 'diagram:\n      type: box-arrow\n      direction: ${1:horizontal}\n      boxes:\n        - ${2:Step 1}\n        - ${3:Step 2}\n        - ${4:Step 3}',
+            detail: 'Diagram block'
+          };
+          
+          // Add snippets based on context
+          if (context === 'new-slide') {
+            slideSnippets.forEach(s => {
+              suggestions.push({
+                label: s.label,
+                kind: monaco.languages.CompletionItemKind.Snippet,
+                insertText: s.insertText,
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                detail: s.detail,
+                sortText: '0' + s.label,
+                range: range
+              });
+            });
+          }
+          
+          if (context === 'file-start') {
+            suggestions.push({
+              label: metaSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: metaSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: metaSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+          }
+          
+          if (context === 'in-meta') {
+            [headerFooterSnippet, formatSnippet].forEach(s => {
+              suggestions.push({
+                label: s.label,
+                kind: monaco.languages.CompletionItemKind.Snippet,
+                insertText: s.insertText,
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                detail: s.detail,
+                sortText: '0' + s.label,
+                range: range
+              });
+            });
+          }
+          
+          if (context === 'in-body') {
+            suggestions.push({
+              label: diagramSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: diagramSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: diagramSnippet.detail,
+              sortText: '0',
+              range: range
+            });
+          }
+          
+          // Keywords with colon (YAML keys) - always available
+          const keysWithColon = [
+            { label: 'meta:', detail: 'Metadata section' },
+            { label: 'slides:', detail: 'Slides array' },
+            { label: 'project:', detail: 'Project name' },
+            { label: 'author:', detail: 'Author name' },
+            { label: 'date:', detail: 'Date' },
+            { label: 'version:', detail: 'Version' },
+            { label: 'theme:', detail: 'Theme name' },
+            { label: 'title:', detail: 'Slide title' },
+            { label: 'subtitle:', detail: 'Subtitle' },
+            { label: 'template:', detail: 'Template type' },
+            { label: 'body:', detail: 'Body content' },
+            { label: 'format:', detail: 'Format settings' },
+            { label: 'notes:', detail: 'Speaker notes' },
+            { label: 'text:', detail: 'Text array' },
+            { label: 'style:', detail: 'Layout style' },
+            { label: 'figure:', detail: 'Image filename' },
+            { label: 'caption:', detail: 'Figure caption' },
+            { label: 'diagram:', detail: 'Diagram block' },
+            { label: 'header:', detail: 'Header config' },
+            { label: 'footer:', detail: 'Footer config' },
+            { label: 'show:', detail: 'Show/hide' },
+            { label: 'left:', detail: 'Left content' },
+            { label: 'center:', detail: 'Center content' },
+            { label: 'right:', detail: 'Right content' },
+            { label: 'color:', detail: 'Color value' },
+            { label: 'size:', detail: 'Font size' },
+            { label: 'weight:', detail: 'Font weight' },
+            { label: 'background:', detail: 'Background' },
+            { label: 'accent:', detail: 'Accent color' },
+            { label: 'bullet:', detail: 'Bullet color' },
+            { label: 'items:', detail: 'List items' },
+            { label: 'events:', detail: 'Timeline events' },
+            { label: 'contact:', detail: 'Contact info' },
+            { label: 'message:', detail: 'Message text' },
+            { label: 'source:', detail: 'Quote source' },
+            { label: 'quote:', detail: 'Quote text' },
+            { label: 'type:', detail: 'Diagram type' },
+            { label: 'direction:', detail: 'Direction' },
+            { label: 'boxes:', detail: 'Box labels' },
+            { label: 'ratio:', detail: 'Split ratio' },
+          ];
+          
+          // Values (no colon)
+          const values = [
+            { label: 'title', detail: 'Title template' },
+            { label: 'section', detail: 'Section template' },
+            { label: 'quote', detail: 'Quote template' },
+            { label: 'qa', detail: 'Q&A template' },
+            { label: 'thanks', detail: 'Thanks template' },
+            { label: 'agenda', detail: 'Agenda template' },
+            { label: 'comparison', detail: 'Comparison template' },
+            { label: 'timeline', detail: 'Timeline template' },
+            { label: 'default', detail: 'Default theme' },
+            { label: 'corporate', detail: 'Corporate theme' },
+            { label: 'minimal', detail: 'Minimal theme' },
+            { label: 'dark', detail: 'Dark theme' },
+            { label: 'nature', detail: 'Nature theme' },
+            { label: 'sunset', detail: 'Sunset theme' },
+            { label: 'ocean', detail: 'Ocean theme' },
+            { label: 'lavender', detail: 'Lavender theme' },
+            { label: 'rose', detail: 'Rose theme' },
+            { label: 'midnight', detail: 'Midnight theme' },
+            { label: 'figure_caption', detail: 'Figure with caption' },
+            { label: 'split', detail: 'Split layout' },
+            { label: 'horizontal', detail: 'Horizontal' },
+            { label: 'vertical', detail: 'Vertical' },
+            { label: 'box-arrow', detail: 'Box arrow diagram' },
+            { label: 'true', detail: 'Boolean true' },
+            { label: 'false', detail: 'Boolean false' },
+          ];
+          
+          keysWithColon.forEach(kw => {
+            suggestions.push({
+              label: kw.label,
+              kind: monaco.languages.CompletionItemKind.Property,
+              insertText: kw.label + ' ',
+              detail: kw.detail,
+              sortText: '1' + kw.label,
+              range: range
+            });
+          });
+          
+          values.forEach(kw => {
+            suggestions.push({
+              label: kw.label,
+              kind: monaco.languages.CompletionItemKind.Value,
+              insertText: kw.label,
+              detail: kw.detail,
+              sortText: '2' + kw.label,
+              range: range
+            });
+          });
+          
           return { suggestions };
         }
       });
@@ -958,539 +1245,744 @@
         automaticLayout: true,
         tabSize: 2,
         wordWrap: 'on',
-        padding: { top: 16 },
+        renderWhitespace: 'selection',
+        quickSuggestions: true,
+        suggestOnTriggerCharacters: true,
+        acceptSuggestionOnEnter: 'on',
+        tabCompletion: 'onlySnippets',
+        snippetSuggestions: 'top',
+        suggest: {
+          showSnippets: true,
+          snippetsPreventQuickSuggestions: false
+        }
       });
 
-      // Listen for changes
       monacoEditor.onDidChangeModelContent(() => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(parsePDL, 300);
+        parseAndRender();
       });
 
-      // Load initial sample
       loadSample();
     });
 
-    let debounceTimer;
+    // Theme selector - register once after DOM is ready
+    (function initThemeSelector() {
+      const themeSelect = document.getElementById('theme-select');
+      if (themeSelect && !themeSelect._listenerAdded) {
+        themeSelect._listenerAdded = true;
+        let isChanging = false;
+        
+        themeSelect.addEventListener('change', function(e) {
+          if (isChanging) return;
+          isChanging = true;
+          e.stopPropagation();
+          changeTheme(this.value);
+          setTimeout(() => { isChanging = false; }, 50);
+        });
+      }
+    })();
 
-    // ========================================
-    // Tab handling
-    // ========================================
+    // Tab switching
     document.querySelectorAll('.editor-tab').forEach(tab => {
       tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
         document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.editor-content').forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        document.querySelector(`[data-content="${tabName}"]`).classList.add('active');
       });
     });
 
-    // ========================================
-    // PDL Parser & Validator
-    // ========================================
-    function parsePDL() {
-      const content = monacoEditor ? monacoEditor.getValue().trim() : '';
-      issues = [];
-      pdlData = null;
+    // Image handling
+    const dropzone = document.getElementById('image-dropzone');
+    const imageInput = document.getElementById('image-input');
 
-      if (!content) {
-        updateUI();
-        return;
-      }
+    dropzone.addEventListener('click', () => imageInput.click());
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    imageInput.addEventListener('change', e => handleFiles(e.target.files));
 
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            uploadedImages.set(file.name, e.target.result);
+            renderImageGrid();
+            parseAndRender();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    function renderImageGrid() {
+      const grid = document.getElementById('image-grid');
+      grid.innerHTML = '';
+      uploadedImages.forEach((data, name) => {
+        const item = document.createElement('div');
+        item.className = 'image-item';
+        item.innerHTML = `
+          <img src="${data}" alt="${name}">
+          <div class="image-item-name">${name}</div>
+          <button class="image-item-delete" onclick="deleteImage('${name}')">✕</button>
+        `;
+        item.addEventListener('click', e => {
+          if (!e.target.classList.contains('image-item-delete')) {
+            navigator.clipboard.writeText(name);
+            showNotification('Copied: ' + name, 'success');
+          }
+        });
+        grid.appendChild(item);
+      });
+    }
+
+    function deleteImage(name) {
+      uploadedImages.delete(name);
+      renderImageGrid();
+      parseAndRender();
+    }
+
+    // Parse and render
+    function parseAndRender() {
+      const content = monacoEditor ? monacoEditor.getValue() : '';
+      const errors = [];
+      
       try {
-        pdlData = jsyaml.load(content);
-        validatePDL(pdlData);
+        parsedData = jsyaml.load(content);
+        
+        if (!parsedData || !parsedData.slides || !Array.isArray(parsedData.slides)) {
+          errors.push({ type: 'error', message: 'Invalid structure: slides array required' });
+        }
+        
+        // Sync theme selector with meta.theme (only if not changed by UI)
+        const themeSelect = document.getElementById('theme-select');
+        if (!themeChangedByUI && parsedData?.meta?.theme && THEMES[parsedData.meta.theme]) {
+          currentTheme = parsedData.meta.theme;
+          if (themeSelect) themeSelect.value = currentTheme;
+        }
       } catch (e) {
-        issues.push({
-          code: 'PDL-EPARSE',
-          where: `line ${e.mark?.line || '?'}`,
-          message: e.reason || e.message
-        });
+        errors.push({ type: 'error', message: `YAML Error: ${e.message}` });
+        parsedData = null;
       }
 
-      updateUI();
+      renderValidation(errors);
+      renderOutline();
+      renderSlide();
     }
 
-    function validatePDL(data) {
-      if (!data || typeof data !== 'object') {
-        issues.push({ code: 'PDL-ESCH001', where: 'document', message: 'Document must be an object' });
-        return;
-      }
-
-      if (!data.slides) {
-        issues.push({ code: 'PDL-ESCH002', where: 'document', message: 'slides is required' });
-        return;
-      }
-
-      if (!Array.isArray(data.slides)) {
-        issues.push({ code: 'PDL-ESCH003', where: 'slides', message: 'slides must be an array' });
-        return;
-      }
-
-      if (data.slides.length === 0) {
-        issues.push({ code: 'PDL-WFMT002', where: 'slides', message: 'slides array is empty' });
-      }
-
-      data.slides.forEach((slide, i) => validateSlide(slide, i));
-    }
-
-    function validateSlide(slide, index) {
-      const where = `slides[${index}]`;
-
-      if (!slide || typeof slide !== 'object') {
-        issues.push({ code: 'PDL-ESCH004', where, message: 'Slide must be an object' });
-        return;
-      }
-
-      if (!slide.title) {
-        issues.push({ code: 'PDL-ESCH005', where: `${where}.title`, message: 'title is required' });
-      } else if (slide.title.trim() === '') {
-        issues.push({ code: 'PDL-WSEM001', where: `${where}.title`, message: 'title is empty' });
-      }
-
-      if (!slide.body) {
-        issues.push({ code: 'PDL-ESCH007', where: `${where}.body`, message: 'body is required' });
-        return;
-      }
-
-      validateBody(slide.body, `${where}.body`);
-    }
-
-    function validateBody(body, where) {
-      if (typeof body !== 'object') {
-        issues.push({ code: 'PDL-ESCH008', where, message: 'body must be an object' });
-        return;
-      }
-
-      const { text, figure, caption, style, split, diagram } = body;
-
-      if (style === 'figure_caption' || style === 'figure_bullets') {
-        if (!figure) {
-          issues.push({ code: 'PDL-ESEM002', where: `${where}.figure`, message: `style "${style}" requires figure` });
-        }
-      }
-
-      if (figure && !text && !caption) {
-        issues.push({ code: 'PDL-ESEM003', where, message: 'figure requires text or caption' });
-      }
-
-      if (Array.isArray(text) && text.length > 7) {
-        issues.push({ code: 'PDL-WFMT001', where: `${where}.text`, message: `too many bullet points (${text.length})` });
-      }
-
-      if (style === 'split' && !split) {
-        issues.push({ code: 'PDL-ESEM004', where, message: 'style "split" requires split object' });
-      }
-    }
-
-    // ========================================
-    // SVG Renderer
-    // ========================================
-    
-    // Default format settings
-    const defaultFormat = {
-      title: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 48,
-        weight: 700,
-        color: '#1a1a1a'
-      },
-      body: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 24,
-        weight: 400,
-        color: '#333333'
-      },
-      bullet: {
-        color: '#3b82f6',
-        size: 6
-      },
-      caption: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 16,
-        weight: 400,
-        color: '#666666'
-      },
-      note: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 14,
-        weight: 400,
-        style: 'italic',
-        color: '#888888'
-      },
-      header: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 14,
-        weight: 500,
-        color: '#666666'
-      },
-      footer: {
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 12,
-        weight: 400,
-        color: '#888888'
-      },
-      diagram: {
-        boxColor: '#3b82f6',
-        textColor: '#ffffff',
-        arrowColor: '#666666',
-        font: "'Inter', 'Noto Sans JP', sans-serif",
-        size: 16,
-        weight: 500
-      }
-    };
-
-    function getFormat(slideFormat = null) {
-      const globalFormat = pdlData?.meta?.format || {};
+    function renderValidation(errors) {
+      const list = document.getElementById('validation-list');
+      const count = document.getElementById('validation-count');
       
-      // Deep merge: defaults <- global <- slide
-      const merged = {};
-      for (const key of Object.keys(defaultFormat)) {
-        merged[key] = { 
-          ...defaultFormat[key], 
-          ...globalFormat[key],
-          ...(slideFormat?.[key] || {})
-        };
-      }
-      return merged;
-    }
-
-    function generateStyles(format) {
-      return `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap');
-        .title { 
-          font: ${format.title.weight} ${format.title.size}px ${format.title.font}; 
-          fill: ${format.title.color}; 
-        }
-        .body-text { 
-          font: ${format.body.weight} ${format.body.size}px ${format.body.font}; 
-          fill: ${format.body.color}; 
-        }
-        .bullet { 
-          font: ${format.body.weight} ${format.body.size}px ${format.body.font}; 
-          fill: ${format.body.color}; 
-        }
-        .caption { 
-          font: ${format.caption.weight} ${format.caption.size}px ${format.caption.font}; 
-          fill: ${format.caption.color}; 
-        }
-        .note { 
-          font: ${format.note.style || 'normal'} ${format.note.weight} ${format.note.size}px ${format.note.font}; 
-          fill: ${format.note.color}; 
-        }
-        .header-text { 
-          font: ${format.header.weight} ${format.header.size}px ${format.header.font}; 
-          fill: ${format.header.color}; 
-        }
-        .footer-text { 
-          font: ${format.footer.weight} ${format.footer.size}px ${format.footer.font}; 
-          fill: ${format.footer.color}; 
-        }
-        .diagram-box { 
-          fill: ${format.diagram.boxColor}; 
-          rx: 8; 
-        }
-        .diagram-text { 
-          font: ${format.diagram.weight} ${format.diagram.size}px ${format.diagram.font}; 
-          fill: ${format.diagram.textColor}; 
-          text-anchor: middle; 
-        }
-        .diagram-arrow { 
-          stroke: ${format.diagram.arrowColor}; 
-          stroke-width: 2; 
-          fill: none; 
-          marker-end: url(#arrowhead); 
-        }
-      `;
-    }
-
-    function renderSlideSVG(slide, width = 1280, height = 720, slideIndex = 0, totalSlides = 1) {
-      const title = escapeXml(slide.title || 'Untitled');
-      const body = slide.body || {};
-      const style = body.style || detectStyle(body);
-      const format = getFormat(slide.format);  // スライド個別formatを渡す
-
-      // Get header/footer config from meta
-      const headerConfig = pdlData?.meta?.header || {};
-      const footerConfig = pdlData?.meta?.footer || {};
-      
-      // Calculate content area based on header/footer
-      const hasHeader = headerConfig.show !== false && (headerConfig.text || headerConfig.logo);
-      const hasFooter = footerConfig.show !== false && (footerConfig.left || footerConfig.center || footerConfig.right);
-      
-      const headerHeight = hasHeader ? 50 : 0;
-      const footerHeight = hasFooter ? 40 : 0;
-      const contentTop = headerHeight + 60;
-      const contentHeight = height - contentTop - footerHeight - 40;
-
-      let content = '';
-
-      switch (style) {
-        case 'split':
-          content = renderSplitLayout(body, width, height, contentTop, contentHeight, format);
-          break;
-        case 'figure_caption':
-        case 'figure_bullets':
-          content = renderFigureLayout(body, width, height, contentTop, contentHeight, format);
-          break;
-        default:
-          content = renderTextLayout(body, width, height, contentTop, contentHeight, format);
-      }
-
-      // Render header
-      const headerSvg = renderHeader(headerConfig, width, slideIndex, totalSlides);
-      
-      // Render footer
-      const footerSvg = renderFooter(footerConfig, width, height, slideIndex, totalSlides);
-
-      return `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
-          <defs>
-            <style>${generateStyles(format)}</style>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="${format.diagram.arrowColor}" />
-            </marker>
-          </defs>
-          <rect width="${width}" height="${height}" fill="white"/>
-          ${headerSvg}
-          <text x="64" y="${contentTop + 40}" class="title">${title}</text>
-          <line x1="64" y1="${contentTop + 60}" x2="${width - 64}" y2="${contentTop + 60}" stroke="#e5e5e5" stroke-width="2"/>
-          ${content}
-          ${slide.notes ? `<text x="64" y="${height - footerHeight - 20}" class="note">📝 ${escapeXml(slide.notes)}</text>` : ''}
-          ${footerSvg}
-        </svg>
-      `;
-    }
-
-    function renderHeader(config, width, slideIndex, totalSlides) {
-      if (config.show === false) return '';
-      if (!config.text && !config.logo) return '';
-
-      let svg = '';
-      const y = 30;
-      
-      // Background line
-      svg += `<line x1="0" y1="50" x2="${width}" y2="50" stroke="#f0f0f0" stroke-width="1"/>`;
-
-      // Logo
-      let textX = 64;
-      if (config.logo) {
-        const logoSrc = images[config.logo] || config.logo;
-        svg += `<image x="20" y="8" width="36" height="36" href="${escapeXml(logoSrc)}" preserveAspectRatio="xMidYMid meet"/>`;
-        textX = 66;
-      }
-
-      // Header text with placeholder replacement
-      if (config.text) {
-        const text = replacePlaceholders(config.text, slideIndex, totalSlides);
-        svg += `<text x="${textX}" y="${y}" class="header-text">${escapeXml(text)}</text>`;
-      }
-
-      return svg;
-    }
-
-    function renderFooter(config, width, height, slideIndex, totalSlides) {
-      if (config.show === false) return '';
-      if (!config.left && !config.center && !config.right) return '';
-
-      let svg = '';
-      const y = height - 15;
-      
-      // Background line
-      svg += `<line x1="0" y1="${height - 40}" x2="${width}" y2="${height - 40}" stroke="#f0f0f0" stroke-width="1"/>`;
-
-      // Left text
-      if (config.left) {
-        const text = replacePlaceholders(config.left, slideIndex, totalSlides);
-        svg += `<text x="64" y="${y}" class="footer-text">${escapeXml(text)}</text>`;
-      }
-
-      // Center text
-      if (config.center) {
-        const text = replacePlaceholders(config.center, slideIndex, totalSlides);
-        svg += `<text x="${width / 2}" y="${y}" class="footer-text" text-anchor="middle">${escapeXml(text)}</text>`;
-      }
-
-      // Right text (default to page number if not specified but footer is enabled)
-      const rightText = config.right || '{page} / {total}';
-      const text = replacePlaceholders(rightText, slideIndex, totalSlides);
-      svg += `<text x="${width - 64}" y="${y}" class="footer-text" text-anchor="end">${escapeXml(text)}</text>`;
-
-      return svg;
-    }
-
-    function replacePlaceholders(text, slideIndex, totalSlides) {
-      if (!text) return '';
-      return text
-        .replace(/\{project\}/g, pdlData?.meta?.project || '')
-        .replace(/\{author\}/g, pdlData?.meta?.author || '')
-        .replace(/\{date\}/g, pdlData?.meta?.date || '')
-        .replace(/\{version\}/g, pdlData?.meta?.version || '')
-        .replace(/\{page\}/g, String(slideIndex + 1))
-        .replace(/\{total\}/g, String(totalSlides));
-    }
-
-    function detectStyle(body) {
-      if (body.split) return 'split';
-      if (body.figure) return 'figure_caption';
-      if (body.diagram) return 'diagram';
-      return 'text';
-    }
-
-    function renderTextLayout(body, width, height, contentTop = 120, contentHeight = 500, format = defaultFormat) {
-      const text = body.text;
-      const diagram = body.diagram;
-      let svg = '';
-      let y = contentTop + 80;
-      const lineHeight = Math.round(format.body.size * 2);
-
-      if (Array.isArray(text)) {
-        text.forEach((item, i) => {
-          svg += `<circle cx="84" cy="${y - 8}" r="${format.bullet.size}" fill="${format.bullet.color}"/>`;
-          svg += `<text x="110" y="${y}" class="bullet">${escapeXml(item)}</text>`;
-          y += lineHeight;
-        });
-      } else if (text) {
-        const lines = wrapText(text, 60);
-        lines.forEach(line => {
-          svg += `<text x="64" y="${y}" class="body-text">${escapeXml(line)}</text>`;
-          y += Math.round(format.body.size * 1.5);
-        });
-      }
-
-      if (diagram) {
-        svg += renderDiagram(diagram, 64, y + 20, width - 128, format);
-      }
-
-      return svg;
-    }
-
-    function renderFigureLayout(body, width, height, contentTop = 120, contentHeight = 500, format = defaultFormat) {
-      const text = body.text;
-      const figure = body.figure;
-      const caption = body.caption;
-      let svg = '';
-
-      // Text on left
-      const textX = 64;
-      let y = contentTop + 80;
-      const lineHeight = Math.round(format.body.size * 2);
-
-      if (Array.isArray(text)) {
-        text.forEach(item => {
-          svg += `<circle cx="84" cy="${y - 8}" r="${format.bullet.size}" fill="${format.bullet.color}"/>`;
-          svg += `<text x="110" y="${y}" class="bullet">${escapeXml(item)}</text>`;
-          y += lineHeight;
-        });
-      } else if (text) {
-        const lines = wrapText(text, 35);
-        lines.forEach(line => {
-          svg += `<text x="${textX}" y="${y}" class="body-text">${escapeXml(line)}</text>`;
-          y += Math.round(format.body.size * 1.5);
-        });
-      }
-
-      // Figure on right
-      const figX = width * 0.55;
-      const figY = contentTop + 60;
-      const figW = width * 0.4;
-      const figH = Math.min(contentHeight * 0.7, height * 0.55);
-      const src = typeof figure === 'string' ? figure : figure?.src;
-      const imgSrc = images[src] || src;
-
-      svg += `<rect x="${figX}" y="${figY}" width="${figW}" height="${figH}" fill="#f5f5f5" rx="8"/>`;
-      if (imgSrc) {
-        svg += `<image x="${figX}" y="${figY}" width="${figW}" height="${figH}" href="${escapeXml(imgSrc)}" preserveAspectRatio="xMidYMid meet"/>`;
-      }
-      if (caption) {
-        svg += `<text x="${figX + figW/2}" y="${figY + figH + 30}" class="caption" text-anchor="middle">${escapeXml(caption)}</text>`;
-      }
-
-      return svg;
-    }
-
-    function renderSplitLayout(body, width, height, contentTop = 120, contentHeight = 500, format = defaultFormat) {
-      const split = body.split || {};
-      const direction = split.direction || 'horizontal';
-      const ratio = split.ratio || 0.5;
-      let svg = '';
-
-      const startY = contentTop + 80;
-      const availableHeight = contentHeight - 40;
-
-      if (direction === 'horizontal') {
-        const leftW = (width - 128) * ratio;
-        const rightW = (width - 128) * (1 - ratio);
-        
-        svg += renderPaneContent(split.a, 64, startY, leftW - 32, availableHeight, format);
-        svg += `<line x1="${64 + leftW}" y1="${startY}" x2="${64 + leftW}" y2="${startY + availableHeight}" stroke="#e5e5e5" stroke-width="1"/>`;
-        svg += renderPaneContent(split.b, 64 + leftW + 32, startY, rightW - 32, availableHeight, format);
+      if (errors.length === 0) {
+        list.innerHTML = '<div class="validation-item success">✓ No errors</div>';
+        count.textContent = '✓';
       } else {
-        const topH = availableHeight * ratio;
-        const botH = availableHeight * (1 - ratio);
+        list.innerHTML = errors.map(e => 
+          `<div class="validation-item ${e.type}">● ${e.message}</div>`
+        ).join('');
+        count.textContent = `${errors.length} issue(s)`;
+      }
+    }
+
+    function renderOutline() {
+      const list = document.getElementById('outline-list');
+      list.innerHTML = '';
+
+      if (!parsedData || !parsedData.slides) return;
+
+      parsedData.slides.forEach((slide, index) => {
+        const item = document.createElement('div');
+        item.className = 'outline-item' + (index === currentSlide ? ' active' : '');
         
-        svg += renderPaneContent(split.a, 64, startY, width - 128, topH - 20, format);
-        svg += `<line x1="64" y1="${startY + topH}" x2="${width - 64}" y2="${startY + topH}" stroke="#e5e5e5" stroke-width="1"/>`;
-        svg += renderPaneContent(split.b, 64, startY + topH + 20, width - 128, botH - 20, format);
+        const template = slide.template || '';
+        const title = slide.title || slide.quote?.substring(0, 20) + '...' || `Slide ${index + 1}`;
+        
+        item.innerHTML = `
+          <span class="outline-number">${index + 1}</span>
+          <span>${escapeHtml(title.substring(0, 25))}</span>
+          ${template ? `<span class="outline-template">${template}</span>` : ''}
+        `;
+        item.addEventListener('click', () => {
+          currentSlide = index;
+          renderOutline();
+          renderSlide();
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function renderSlide() {
+      const frame = document.getElementById('slide-frame');
+      const pageInfo = document.getElementById('preview-page');
+
+      if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) {
+        frame.innerHTML = '<svg viewBox="0 0 1920 1080"><rect fill="#ffffff" width="1920" height="1080"/><text x="960" y="540" text-anchor="middle" fill="#999" font-size="48">No slides</text></svg>';
+        pageInfo.textContent = '0 / 0';
+        return;
       }
 
+      const total = parsedData.slides.length;
+      currentSlide = Math.max(0, Math.min(currentSlide, total - 1));
+      pageInfo.textContent = `${currentSlide + 1} / ${total}`;
+
+      const slide = parsedData.slides[currentSlide];
+      const meta = parsedData.meta || {};
+      const globalFormat = meta.format || {};
+      const slideFormat = slide.format || {};
+      const format = mergeFormat(globalFormat, slideFormat);
+
+      frame.innerHTML = generateSlideSVG(slide, meta, format, currentSlide + 1, total);
+    }
+
+    function mergeFormat(global, local) {
+      const result = JSON.parse(JSON.stringify(global));
+      for (const key in local) {
+        if (typeof local[key] === 'object' && !Array.isArray(local[key])) {
+          result[key] = { ...result[key], ...local[key] };
+        } else {
+          result[key] = local[key];
+        }
+      }
+      return result;
+    }
+
+    function generateSlideSVG(slide, meta, format, pageNum, totalPages) {
+      const W = 1920, H = 1080;
+      
+      // Get theme colors (base from theme, can be overridden by format)
+      const theme = getThemeColors(meta);
+      
+      // Merge slide-specific format
+      const slideFormat = slide.format || {};
+      const colors = {
+        background: slideFormat.background?.color || format.background?.color || theme.background,
+        accent: slideFormat.accent?.color || format.accent?.color || theme.accent,
+        title: slideFormat.title?.color || format.title?.color || theme.title,
+        titleSize: slideFormat.title?.size || format.title?.size || theme.titleSize,
+        titleWeight: slideFormat.title?.weight || format.title?.weight || theme.titleWeight,
+        text: slideFormat.text?.color || format.text?.color || theme.text,
+        textSize: slideFormat.text?.size || format.text?.size || theme.textSize,
+        bullet: slideFormat.bullet?.color || format.bullet?.color || theme.bullet,
+        muted: theme.muted,
+        headerBg: theme.headerBg,
+        footerBg: theme.footerBg
+      };
+      
+      let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+      
+      // Background
+      svg += `<rect fill="${colors.background}" width="${W}" height="${H}"/>`;
+
+      // Template-based rendering
+      if (slide.template) {
+        svg += renderTemplate(slide, meta, colors, W, H, pageNum, totalPages);
+      } else {
+        svg += renderStandardSlide(slide, meta, colors, W, H, pageNum, totalPages);
+      }
+
+      // Header
+      if (meta.header?.show) {
+        svg += renderHeader(meta, colors, W, pageNum, totalPages);
+      }
+
+      // Footer
+      if (meta.footer?.show) {
+        svg += renderFooter(meta, colors, W, H, pageNum, totalPages);
+      }
+
+      svg += '</svg>';
       return svg;
     }
 
-    function renderPaneContent(pane, x, y, w, h, format = defaultFormat) {
-      if (!pane) return '';
+    function renderTemplate(slide, meta, colors, W, H, pageNum, totalPages) {
+      switch (slide.template) {
+        case 'title':
+          return renderTitleTemplate(slide, colors, W, H);
+        case 'section':
+          return renderSectionTemplate(slide, colors, W, H);
+        case 'quote':
+          return renderQuoteTemplate(slide, colors, W, H);
+        case 'qa':
+          return renderQATemplate(slide, colors, W, H);
+        case 'thanks':
+          return renderThanksTemplate(slide, colors, W, H);
+        case 'agenda':
+          return renderAgendaTemplate(slide, colors, W, H);
+        case 'comparison':
+          return renderComparisonTemplate(slide, colors, W, H);
+        case 'timeline':
+          return renderTimelineTemplate(slide, colors, W, H);
+        default:
+          return renderStandardSlide(slide, meta, colors, W, H, pageNum, totalPages);
+      }
+    }
+
+    // Title Template
+    function renderTitleTemplate(slide, colors, W, H) {
       let svg = '';
-      let curY = y;
-      const fontSize = Math.round(format.body.size * 0.83);
-      const lineHeight = Math.round(fontSize * 2);
-
-      if (Array.isArray(pane.text)) {
-        pane.text.forEach(item => {
-          svg += `<circle cx="${x + 20}" cy="${curY + 4}" r="${format.bullet.size - 1}" fill="${format.bullet.color}"/>`;
-          svg += `<text x="${x + 40}" y="${curY + 12}" class="bullet" style="font-size: ${fontSize}px;">${escapeXml(item)}</text>`;
-          curY += lineHeight;
-        });
-      } else if (pane.text) {
-        const lines = wrapText(pane.text, Math.floor(w / 14));
-        lines.forEach(line => {
-          svg += `<text x="${x}" y="${curY + 12}" class="body-text" style="font-size: ${fontSize}px;">${escapeXml(line)}</text>`;
-          curY += Math.round(fontSize * 1.6);
-        });
+      
+      // Accent bar
+      svg += `<rect x="0" y="${H/2 - 120}" width="8" height="240" fill="${colors.accent}"/>`;
+      
+      // Title
+      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title || '')}</text>`;
+      
+      // Subtitle
+      if (slide.subtitle) {
+        svg += `<text x="${W/2}" y="${H/2 + 40}" text-anchor="middle" font-size="36" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
       }
-
-      if (pane.figure) {
-        const src = typeof pane.figure === 'string' ? pane.figure : pane.figure?.src;
-        const imgSrc = images[src] || src;
-        if (imgSrc) {
-          svg += `<image x="${x}" y="${curY + 10}" width="${w}" height="${h - (curY - y) - 20}" href="${escapeXml(imgSrc)}" preserveAspectRatio="xMidYMid meet"/>`;
-        }
+      
+      // Author & Date
+      let bottomY = H - 120;
+      if (slide.author) {
+        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="24" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.author)}</text>`;
+        bottomY += 40;
       }
-
+      if (slide.date) {
+        svg += `<text x="${W/2}" y="${bottomY}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.date)}</text>`;
+      }
+      
       return svg;
     }
 
-    function renderDiagram(diagram, x, y, maxWidth, format = defaultFormat) {
-      if (!diagram.boxes || !Array.isArray(diagram.boxes)) return '';
-      
-      const boxes = diagram.boxes;
-      const boxW = Math.min(150, (maxWidth - (boxes.length - 1) * 40) / boxes.length);
-      const boxH = 50;
-      const gap = 40;
-      const totalW = boxes.length * boxW + (boxes.length - 1) * gap;
-      const startX = x + (maxWidth - totalW) / 2;
-      
+    // Section Template
+    function renderSectionTemplate(slide, colors, W, H) {
       let svg = '';
-      boxes.forEach((label, i) => {
-        const bx = startX + i * (boxW + gap);
-        svg += `<rect x="${bx}" y="${y}" width="${boxW}" height="${boxH}" class="diagram-box"/>`;
-        svg += `<text x="${bx + boxW/2}" y="${y + boxH/2 + 6}" class="diagram-text">${escapeXml(label)}</text>`;
-        if (i < boxes.length - 1) {
-          svg += `<line x1="${bx + boxW + 5}" y1="${y + boxH/2}" x2="${bx + boxW + gap - 5}" y2="${y + boxH/2}" class="diagram-arrow"/>`;
-        }
+      
+      // Large accent background
+      svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="${colors.accent}" opacity="0.05"/>`;
+      svg += `<rect x="${W/2 - 400}" y="${H/2 - 2}" width="800" height="4" fill="${colors.accent}"/>`;
+      
+      // Title
+      svg += `<text x="${W/2}" y="${H/2 - 60}" text-anchor="middle" font-size="64" font-weight="700" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title || '')}</text>`;
+      
+      // Subtitle
+      if (slide.subtitle) {
+        svg += `<text x="${W/2}" y="${H/2 + 60}" text-anchor="middle" font-size="32" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
+      }
+      
+      return svg;
+    }
+
+    // Quote Template
+    function renderQuoteTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Quote marks
+      svg += `<text x="120" y="350" font-size="300" fill="${colors.accent}" opacity="0.15" font-family="Georgia, serif">"</text>`;
+      svg += `<text x="${W - 180}" y="${H - 200}" font-size="300" fill="${colors.accent}" opacity="0.15" font-family="Georgia, serif">"</text>`;
+      
+      // Quote text
+      const quote = slide.quote || '';
+      const lines = wrapText(quote, 50);
+      let y = H/2 - (lines.length * 30);
+      lines.forEach(line => {
+        svg += `<text x="${W/2}" y="${y}" text-anchor="middle" font-size="48" font-style="italic" fill="${colors.text}" font-family="Georgia, serif">${escapeHtml(line)}</text>`;
+        y += 70;
+      });
+      
+      // Author
+      if (slide.author) {
+        svg += `<text x="${W/2}" y="${H - 180}" text-anchor="middle" font-size="28" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">— ${escapeHtml(slide.author)}</text>`;
+      }
+      
+      // Source
+      if (slide.source) {
+        svg += `<text x="${W/2}" y="${H - 130}" text-anchor="middle" font-size="20" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.source)}</text>`;
+      }
+      
+      return svg;
+    }
+
+    // Q&A Template
+    function renderQATemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Large question mark
+      svg += `<text x="${W/2}" y="${H/2 - 50}" text-anchor="middle" font-size="400" fill="${colors.accent}" opacity="0.1" font-family="Inter, sans-serif">?</text>`;
+      
+      // Title
+      const title = slide.title || 'Questions?';
+      svg += `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="72" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      
+      // Contact
+      if (slide.contact) {
+        svg += `<text x="${W/2}" y="${H/2 + 80}" text-anchor="middle" font-size="28" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.contact)}</text>`;
+      }
+      
+      return svg;
+    }
+
+    // Thanks Template
+    function renderThanksTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Gradient-like effect
+      svg += `<rect x="0" y="${H - 200}" width="${W}" height="200" fill="${colors.accent}" opacity="0.05"/>`;
+      
+      // Title
+      const title = slide.title || 'Thank You!';
+      svg += `<text x="${W/2}" y="${H/2 - 40}" text-anchor="middle" font-size="80" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      
+      // Message
+      if (slide.message) {
+        svg += `<text x="${W/2}" y="${H/2 + 50}" text-anchor="middle" font-size="28" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.message)}</text>`;
+      }
+      
+      // Contact
+      if (slide.contact) {
+        svg += `<text x="${W/2}" y="${H/2 + 110}" text-anchor="middle" font-size="24" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.contact)}</text>`;
+      }
+      
+      return svg;
+    }
+
+    // Agenda Template
+    function renderAgendaTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      const title = slide.title || 'Agenda';
+      svg += `<text x="120" y="140" font-size="56" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(title)}</text>`;
+      svg += `<rect x="120" y="170" width="200" height="4" fill="${colors.accent}"/>`;
+      
+      // Items
+      const items = slide.items || [];
+      let y = 280;
+      items.forEach((item, i) => {
+        // Number circle
+        svg += `<circle cx="180" cy="${y - 12}" r="24" fill="${colors.accent}"/>`;
+        svg += `<text x="180" y="${y - 6}" text-anchor="middle" font-size="20" font-weight="600" fill="${colors.background}" font-family="Inter, sans-serif">${i + 1}</text>`;
+        
+        // Item text
+        svg += `<text x="230" y="${y}" font-size="32" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+        y += 90;
       });
       
       return svg;
+    }
+
+    // Comparison Template
+    function renderComparisonTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const leftX = W * 0.25;
+      const rightX = W * 0.75;
+      const startY = 200;
+      
+      // Left side
+      if (slide.left) {
+        svg += `<rect x="80" y="${startY - 20}" width="${W/2 - 120}" height="${H - startY - 80}" rx="8" fill="${colors.accent}" opacity="0.05"/>`;
+        svg += `<text x="${leftX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.left.label || 'Left')}</text>`;
+        
+        let y = startY + 120;
+        (slide.left.items || []).forEach(item => {
+          svg += `<text x="${leftX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">• ${escapeHtml(item)}</text>`;
+          y += 50;
+        });
+      }
+      
+      // Divider
+      svg += `<line x1="${W/2}" y1="${startY}" x2="${W/2}" y2="${H - 100}" stroke="${colors.muted}" stroke-width="2" opacity="0.3"/>`;
+      
+      // Right side
+      if (slide.right) {
+        svg += `<rect x="${W/2 + 40}" y="${startY - 20}" width="${W/2 - 120}" height="${H - startY - 80}" rx="8" fill="${colors.accent}" opacity="0.1"/>`;
+        svg += `<text x="${rightX}" y="${startY + 40}" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.right.label || 'Right')}</text>`;
+        
+        let y = startY + 120;
+        (slide.right.items || []).forEach(item => {
+          svg += `<text x="${rightX}" y="${y}" text-anchor="middle" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">• ${escapeHtml(item)}</text>`;
+          y += 50;
+        });
+      }
+      
+      return svg;
+    }
+
+    // Timeline Template
+    function renderTimelineTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const events = slide.events || [];
+      if (events.length === 0) return svg;
+      
+      const lineY = H/2 + 50;
+      const startX = 200;
+      const endX = W - 200;
+      const spacing = (endX - startX) / Math.max(events.length - 1, 1);
+      
+      // Timeline line
+      svg += `<line x1="${startX}" y1="${lineY}" x2="${endX}" y2="${lineY}" stroke="${colors.muted}" stroke-width="4" opacity="0.3"/>`;
+      
+      // Events
+      events.forEach((event, i) => {
+        const x = events.length === 1 ? W/2 : startX + (i * spacing);
+        
+        // Circle
+        svg += `<circle cx="${x}" cy="${lineY}" r="16" fill="${colors.accent}"/>`;
+        svg += `<circle cx="${x}" cy="${lineY}" r="8" fill="${colors.background}"/>`;
+        
+        // Date (above)
+        svg += `<text x="${x}" y="${lineY - 50}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(event.date || '')}</text>`;
+        
+        // Title (below)
+        const titleLines = wrapText(event.title || '', 15);
+        let ty = lineY + 50;
+        titleLines.forEach(line => {
+          svg += `<text x="${x}" y="${ty}" text-anchor="middle" font-size="20" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(line)}</text>`;
+          ty += 28;
+        });
+      });
+      
+      return svg;
+    }
+
+    // Standard slide rendering
+    function renderStandardSlide(slide, meta, colors, W, H, pageNum, totalPages) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="120" y="120" font-size="${colors.titleSize}" font-weight="${colors.titleWeight}" fill="${colors.title}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      // Body content
+      if (slide.body) {
+        svg += renderBody(slide.body, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    function renderBody(body, colors, W, H) {
+      let svg = '';
+      
+      const style = body.style || 'text';
+      
+      switch (style) {
+        case 'figure_caption':
+        case 'figure_bullets':
+          svg += renderFigureLayout(body, colors, W, H);
+          break;
+        case 'split':
+          svg += renderSplitLayout(body, colors, W, H);
+          break;
+        default:
+          svg += renderTextLayout(body, colors, W, H);
+      }
+      
+      // Diagram
+      if (body.diagram) {
+        svg += renderDiagram(body.diagram, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    function renderTextLayout(body, colors, W, H) {
+      let svg = '';
+      
+      let y = 220;
+      const text = body.text;
+      
+      if (typeof text === 'string') {
+        const lines = wrapText(text, 70);
+        lines.forEach(line => {
+          svg += `<text x="120" y="${y}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(line)}</text>`;
+          y += 50;
+        });
+      } else if (Array.isArray(text)) {
+        text.forEach(item => {
+          svg += `<circle cx="140" cy="${y - 10}" r="6" fill="${colors.bullet}"/>`;
+          svg += `<text x="170" y="${y}" font-size="${colors.textSize}" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+          y += 60;
+        });
+      }
+      
+      return svg;
+    }
+
+    function renderFigureLayout(body, colors, W, H) {
+      let svg = '';
+      
+      // Figure
+      if (body.figure) {
+        const imgSrc = getImageSrc(body.figure);
+        const imgW = 600, imgH = 400;
+        const imgX = W - imgW - 120;
+        const imgY = 200;
+        
+        svg += `<rect x="${imgX - 4}" y="${imgY - 4}" width="${imgW + 8}" height="${imgH + 8}" rx="8" fill="${colors.accent}" opacity="0.1"/>`;
+        svg += `<image href="${imgSrc}" x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}" preserveAspectRatio="xMidYMid slice"/>`;
+        
+        // Caption
+        if (body.caption) {
+          svg += `<text x="${imgX + imgW/2}" y="${imgY + imgH + 40}" text-anchor="middle" font-size="18" fill="${colors.muted}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.caption)}</text>`;
+        }
+      }
+      
+      // Text
+      let y = 220;
+      const text = body.text;
+      
+      if (Array.isArray(text)) {
+        text.forEach(item => {
+          svg += `<circle cx="140" cy="${y - 10}" r="6" fill="${colors.bullet}"/>`;
+          svg += `<text x="170" y="${y}" font-size="28" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+          y += 60;
+        });
+      }
+      
+      return svg;
+    }
+
+    function renderSplitLayout(body, colors, W, H) {
+      let svg = '';
+      const direction = body.direction || 'horizontal';
+      
+      if (direction === 'horizontal') {
+        const leftX = 120;
+        const rightX = W/2 + 60;
+        
+        // Left
+        if (body.left) {
+          let y = 220;
+          if (body.left.title) {
+            svg += `<text x="${leftX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.left.title)}</text>`;
+            y += 60;
+          }
+          (body.left.text || []).forEach(item => {
+            svg += `<circle cx="${leftX + 20}" cy="${y - 10}" r="5" fill="${colors.bullet}"/>`;
+            svg += `<text x="${leftX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+            y += 50;
+          });
+        }
+        
+        // Divider
+        svg += `<line x1="${W/2}" y1="180" x2="${W/2}" y2="${H - 100}" stroke="${colors.muted}" stroke-width="2" opacity="0.3"/>`;
+        
+        // Right
+        if (body.right) {
+          let y = 220;
+          if (body.right.title) {
+            svg += `<text x="${rightX}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(body.right.title)}</text>`;
+            y += 60;
+          }
+          (body.right.text || []).forEach(item => {
+            svg += `<circle cx="${rightX + 20}" cy="${y - 10}" r="5" fill="${colors.bullet}"/>`;
+            svg += `<text x="${rightX + 50}" y="${y}" font-size="24" fill="${colors.text}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(item)}</text>`;
+            y += 50;
+          });
+        }
+      }
+      
+      return svg;
+    }
+
+    function renderDiagram(diagram, colors, W, H) {
+      let svg = '';
+      
+      if (diagram.type === 'box-arrow') {
+        const boxes = diagram.boxes || [];
+        const boxW = 200, boxH = 80;
+        const gap = 100;
+        const totalW = boxes.length * boxW + (boxes.length - 1) * gap;
+        let x = (W - totalW) / 2;
+        const y = H/2 + 50;
+        
+        boxes.forEach((box, i) => {
+          // Box
+          svg += `<rect x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="8" fill="${colors.accent}" opacity="0.1" stroke="${colors.accent}" stroke-width="2"/>`;
+          svg += `<text x="${x + boxW/2}" y="${y + boxH/2 + 8}" text-anchor="middle" font-size="20" font-weight="500" fill="${colors.accent}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(box)}</text>`;
+          
+          // Arrow
+          if (i < boxes.length - 1) {
+            const arrowX = x + boxW + 10;
+            const arrowY = y + boxH/2;
+            svg += `<line x1="${arrowX}" y1="${arrowY}" x2="${arrowX + gap - 20}" y2="${arrowY}" stroke="${colors.accent}" stroke-width="3"/>`;
+            svg += `<polygon points="${arrowX + gap - 20},${arrowY - 8} ${arrowX + gap - 10},${arrowY} ${arrowX + gap - 20},${arrowY + 8}" fill="${colors.accent}"/>`;
+          }
+          
+          x += boxW + gap;
+        });
+      }
+      
+      return svg;
+    }
+
+    function renderHeader(meta, colors, W, pageNum, totalPages) {
+      let svg = '';
+      const header = meta.header || {};
+      const format = header.format || {};
+      const text = replacePlaceholders(header.text || '', meta, pageNum, totalPages);
+      
+      const bgColor = format.background || colors.headerBg;
+      const textColor = format.color || colors.muted;
+      const textSize = format.size || 28;
+      
+      svg += `<rect x="0" y="0" width="${W}" height="50" fill="${bgColor}"/>`;
+      svg += `<text x="60" y="36" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(text)}</text>`;
+      
+      return svg;
+    }
+
+    function renderFooter(meta, colors, W, H, pageNum, totalPages) {
+      let svg = '';
+      const footer = meta.footer || {};
+      const format = footer.format || {};
+      const footerY = H - 32;
+      
+      const bgColor = format.background || colors.footerBg;
+      const textColor = format.color || colors.muted;
+      const textSize = format.size || 28;
+      
+      svg += `<rect x="0" y="${H - 50}" width="${W}" height="50" fill="${bgColor}"/>`;
+      
+      const left = replacePlaceholders(footer.left || '', meta, pageNum, totalPages);
+      const center = replacePlaceholders(footer.center || '', meta, pageNum, totalPages);
+      const right = replacePlaceholders(footer.right || '', meta, pageNum, totalPages);
+      
+      svg += `<text x="60" y="${footerY}" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(left)}</text>`;
+      svg += `<text x="${W/2}" y="${footerY}" text-anchor="middle" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(center)}</text>`;
+      svg += `<text x="${W - 60}" y="${footerY}" text-anchor="end" font-size="${textSize}" fill="${textColor}" font-family="Inter, Noto Sans JP, sans-serif">${escapeHtml(right)}</text>`;
+      
+      return svg;
+    }
+
+    function replacePlaceholders(text, meta, pageNum, totalPages) {
+      return text
+        .replace(/{project}/g, meta.project || '')
+        .replace(/{author}/g, meta.author || '')
+        .replace(/{date}/g, meta.date || '')
+        .replace(/{page}/g, pageNum)
+        .replace(/{total}/g, totalPages);
+    }
+
+    function getImageSrc(figure) {
+      if (figure.startsWith('http://') || figure.startsWith('https://')) {
+        return figure;
+      }
+      return uploadedImages.get(figure) || `https://via.placeholder.com/600x400/e0e0e0/999?text=${encodeURIComponent(figure)}`;
     }
 
     function wrapText(text, maxChars) {
@@ -1511,499 +2003,906 @@
       return lines;
     }
 
-    function escapeXml(str) {
-      if (!str) return '';
-      return String(str)
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+        .replace(/"/g, '&quot;');
     }
 
-    // ========================================
-    // UI Updates
-    // ========================================
-    function updateUI() {
-      updateOutline();
-      updatePreview();
-      updateDiagnostics();
-    }
-
-    function updateOutline() {
-      const list = document.getElementById('outline-list');
-      const count = document.getElementById('slide-count');
-
-      if (!pdlData?.slides?.length) {
-        list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No slides</div></div>';
-        count.textContent = '0 slides';
-        return;
-      }
-
-      count.textContent = `${pdlData.slides.length} slide${pdlData.slides.length > 1 ? 's' : ''}`;
-      
-      list.innerHTML = pdlData.slides.map((slide, i) => {
-        const hasError = issues.some(iss => iss.where.startsWith(`slides[${i}]`) && iss.code.startsWith('PDL-E'));
-        return `
-          <div class="outline-item ${i === currentSlide ? 'active' : ''} ${hasError ? 'error' : ''}" 
-               onclick="goToSlide(${i})">
-            <span class="outline-number">${i + 1}</span>
-            <span class="outline-title">${escapeXml(slide.title || 'Untitled')}</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function updatePreview() {
-      const container = document.getElementById('preview-container');
-      const indicator = document.getElementById('preview-indicator');
-
-      if (!pdlData?.slides?.length) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📽️</div><div class="empty-state-text">Write PDL to preview slides</div></div>';
-        indicator.textContent = '0 / 0';
-        document.getElementById('prev-btn').disabled = true;
-        document.getElementById('next-btn').disabled = true;
-        return;
-      }
-
-      currentSlide = Math.min(currentSlide, pdlData.slides.length - 1);
-      const totalSlides = pdlData.slides.length;
-      const svg = renderSlideSVG(pdlData.slides[currentSlide], 1280, 720, currentSlide, totalSlides);
-      container.innerHTML = `<div class="slide-frame">${svg}</div>`;
-      
-      indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
-      document.getElementById('prev-btn').disabled = currentSlide === 0;
-      document.getElementById('next-btn').disabled = currentSlide >= pdlData.slides.length - 1;
-    }
-
-    function updateDiagnostics() {
-      const errors = issues.filter(i => i.code.startsWith('PDL-E'));
-      const warnings = issues.filter(i => i.code.startsWith('PDL-W'));
-      const dot = document.getElementById('status-dot');
-      const text = document.getElementById('status-text');
-      const list = document.getElementById('diagnostics-list');
-
-      if (errors.length > 0) {
-        dot.className = 'status-indicator error';
-        text.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''}`;
-      } else if (warnings.length > 0) {
-        dot.className = 'status-indicator warning';
-        text.textContent = `${warnings.length} warning${warnings.length > 1 ? 's' : ''}`;
-      } else {
-        dot.className = 'status-indicator success';
-        text.textContent = pdlData ? 'Valid PDL' : 'Ready';
-      }
-
-      list.innerHTML = issues.map(iss => `
-        <div class="diagnostic-item">
-          <span class="diagnostic-code ${iss.code.startsWith('PDL-E') ? 'error' : 'warning'}">${iss.code}</span>
-          <span class="diagnostic-where">${iss.where}</span>
-          <span class="diagnostic-msg">${iss.message}</span>
-        </div>
-      `).join('');
-
-      // Monaco markers
-      if (monacoEditor && monaco) {
-        const model = monacoEditor.getModel();
-        const markers = issues.map(iss => {
-          const match = iss.where.match(/line (\d+)/);
-          const line = match ? parseInt(match[1]) + 1 : 1;
-          return {
-            severity: iss.code.startsWith('PDL-E') ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-            message: `${iss.code}: ${iss.message}`,
-            startLineNumber: line,
-            startColumn: 1,
-            endLineNumber: line,
-            endColumn: 1000,
-          };
-        });
-        monaco.editor.setModelMarkers(model, 'pdl', markers);
-      }
-    }
-
-    // ========================================
     // Navigation
-    // ========================================
-    function goToSlide(index) {
-      currentSlide = index;
-      updateOutline();
-      updatePreview();
-    }
-
     function prevSlide() {
-      if (currentSlide > 0) goToSlide(currentSlide - 1);
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderOutline();
+        renderSlide();
+      }
     }
 
     function nextSlide() {
-      if (pdlData && currentSlide < pdlData.slides.length - 1) goToSlide(currentSlide + 1);
+      if (parsedData && parsedData.slides && currentSlide < parsedData.slides.length - 1) {
+        currentSlide++;
+        renderOutline();
+        renderSlide();
+      }
     }
 
-    // ========================================
-    // Image handling
-    // ========================================
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-    function handleFiles(files) {
-      Array.from(files).forEach(file => {
-        if (!file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-          images[file.name] = e.target.result;
-          renderImageGrid();
-          parsePDL();
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function renderImageGrid() {
-      const grid = document.getElementById('image-grid');
-      grid.innerHTML = Object.entries(images).map(([name, src]) => `
-        <div class="image-item" onclick="copyImageRef('${name}')">
-          <img src="${src}" alt="${name}">
-          <div class="image-item-overlay">
-            <span class="image-item-name">${name}</span>
-          </div>
-          <button class="image-item-delete" onclick="deleteImage(event, '${name}')">✕</button>
-        </div>
-      `).join('');
-    }
-
-    function copyImageRef(name) {
-      navigator.clipboard.writeText(name);
-      alert(`Copied "${name}"\n\nUse in PDL:\nfigure: ${name}`);
-    }
-
-    function deleteImage(e, name) {
-      e.stopPropagation();
-      delete images[name];
-      renderImageGrid();
-      parsePDL();
-    }
-
-    // ========================================
     // Slideshow
-    // ========================================
     function startSlideshow() {
-      if (!pdlData?.slides?.length) { alert('No slides'); return; }
-      slideshowIndex = currentSlide;
+      if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) return;
+      
+      slideshowSlide = currentSlide;
       document.getElementById('slideshow-modal').classList.add('active');
       renderSlideshowSlide();
-      document.addEventListener('keydown', handleSlideshowKey);
+      document.addEventListener('keydown', slideshowKeyHandler);
     }
 
-    function closeSlideshow() {
+    function endSlideshow() {
       document.getElementById('slideshow-modal').classList.remove('active');
-      document.removeEventListener('keydown', handleSlideshowKey);
+      document.removeEventListener('keydown', slideshowKeyHandler);
+    }
+
+    function slideshowKeyHandler(e) {
+      if (e.key === 'Escape') endSlideshow();
+      if (e.key === 'ArrowLeft') prevSlideshowSlide();
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlideshowSlide();
     }
 
     function renderSlideshowSlide() {
-      const frame = document.getElementById('slideshow-frame');
-      const totalSlides = pdlData.slides.length;
-      frame.innerHTML = renderSlideSVG(pdlData.slides[slideshowIndex], 1280, 720, slideshowIndex, totalSlides);
-      document.getElementById('slideshow-indicator').textContent = `${slideshowIndex + 1} / ${totalSlides}`;
-      document.getElementById('slideshow-prev').disabled = slideshowIndex === 0;
-      document.getElementById('slideshow-next').disabled = slideshowIndex >= pdlData.slides.length - 1;
+      const container = document.getElementById('slideshow-slide');
+      const pageInfo = document.getElementById('slideshow-page');
+      const total = parsedData.slides.length;
+      
+      slideshowSlide = Math.max(0, Math.min(slideshowSlide, total - 1));
+      pageInfo.textContent = `${slideshowSlide + 1} / ${total}`;
+      
+      const slide = parsedData.slides[slideshowSlide];
+      const meta = parsedData.meta || {};
+      const globalFormat = meta.format || {};
+      const slideFormat = slide.format || {};
+      const format = mergeFormat(globalFormat, slideFormat);
+      
+      container.innerHTML = generateSlideSVG(slide, meta, format, slideshowSlide + 1, total);
     }
 
-    function slideshowPrev() { if (slideshowIndex > 0) { slideshowIndex--; renderSlideshowSlide(); } }
-    function slideshowNext() { if (slideshowIndex < pdlData.slides.length - 1) { slideshowIndex++; renderSlideshowSlide(); } }
-    function handleSlideshowKey(e) {
-      if (e.key === 'Escape') closeSlideshow();
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') slideshowPrev();
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') slideshowNext();
-    }
-
-    // ========================================
-    // Export & Sample
-    // ========================================
-    function exportYAML() {
-      const content = monacoEditor ? monacoEditor.getValue() : '';
-      const blob = new Blob([content], { type: 'text/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'presentation.pdl.yaml';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // ========================================
-    // Project Save/Load (.fnote = ZIP)
-    // ========================================
-    async function saveProject() {
-      const zip = new JSZip();
-      
-      // Add PDL content
-      const pdlContent = monacoEditor ? monacoEditor.getValue() : '';
-      zip.file('presentation.pdl.yaml', pdlContent);
-      
-      // Add images
-      const imagesFolder = zip.folder('images');
-      for (const [name, dataUrl] of Object.entries(images)) {
-        // Convert data URL to binary
-        const base64 = dataUrl.split(',')[1];
-        imagesFolder.file(name, base64, { base64: true });
-      }
-      
-      // Add manifest
-      const manifest = {
-        version: '0.2.1',
-        app: 'FrameNote',
-        created: new Date().toISOString(),
-        images: Object.keys(images)
-      };
-      zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-      
-      // Generate and download
-      try {
-        const blob = await zip.generateAsync({ type: 'blob' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        // Get project name from meta or use default
-        let projectName = 'presentation';
-        if (pdlData?.meta?.project) {
-          projectName = pdlData.meta.project.replace(/[^a-zA-Z0-9_\-\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g, '_');
-        }
-        a.download = `${projectName}.fnote`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showNotification('Project saved successfully!', 'success');
-      } catch (e) {
-        showNotification('Failed to save project: ' + e.message, 'error');
+    function prevSlideshowSlide() {
+      if (slideshowSlide > 0) {
+        slideshowSlide--;
+        renderSlideshowSlide();
       }
     }
 
-    async function openProject() {
-      document.getElementById('project-input').click();
+    function nextSlideshowSlide() {
+      if (slideshowSlide < parsedData.slides.length - 1) {
+        slideshowSlide++;
+        renderSlideshowSlide();
+      }
     }
 
-    document.getElementById('project-input').addEventListener('change', async (e) => {
+    // File operations
+    function openProject() {
+      document.getElementById('file-input').click();
+    }
+
+    document.getElementById('file-input').addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
-      
-      try {
+
+      if (file.name.endsWith('.fnote')) {
         const zip = await JSZip.loadAsync(file);
         
-        // Load manifest
-        const manifestFile = zip.file('manifest.json');
-        if (manifestFile) {
-          const manifestText = await manifestFile.async('string');
-          const manifest = JSON.parse(manifestText);
-          console.log('Loading FrameNote project:', manifest);
-        }
-        
-        // Load PDL content
-        const pdlFile = zip.file('presentation.pdl.yaml');
-        if (pdlFile) {
-          const pdlContent = await pdlFile.async('string');
-          if (monacoEditor) {
-            monacoEditor.setValue(pdlContent);
-          }
+        // Load YAML
+        const yamlFile = zip.file('presentation.pdl.yaml');
+        if (yamlFile) {
+          const content = await yamlFile.async('string');
+          if (monacoEditor) monacoEditor.setValue(content);
         }
         
         // Load images
-        images = {};
-        const imagesFolder = zip.folder('images');
-        if (imagesFolder) {
-          const imageFiles = [];
-          imagesFolder.forEach((relativePath, file) => {
-            if (!file.dir) {
-              imageFiles.push({ name: relativePath, file });
+        uploadedImages.clear();
+        const imageFiles = zip.folder('images');
+        if (imageFiles) {
+          for (const [path, zipEntry] of Object.entries(zip.files)) {
+            if (path.startsWith('images/') && !zipEntry.dir) {
+              const name = path.replace('images/', '');
+              const data = await zipEntry.async('base64');
+              const ext = name.split('.').pop().toLowerCase();
+              const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+              uploadedImages.set(name, `data:${mime};base64,${data}`);
             }
-          });
-          
-          for (const { name, file } of imageFiles) {
-            const base64 = await file.async('base64');
-            const ext = name.split('.').pop().toLowerCase();
-            const mimeTypes = {
-              'png': 'image/png',
-              'jpg': 'image/jpeg',
-              'jpeg': 'image/jpeg',
-              'gif': 'image/gif',
-              'webp': 'image/webp',
-              'svg': 'image/svg+xml'
-            };
-            const mimeType = mimeTypes[ext] || 'image/png';
-            images[name] = `data:${mimeType};base64,${base64}`;
           }
-          
-          renderImageGrid();
         }
-        
-        showNotification(`Project loaded: ${Object.keys(images).length} images`, 'success');
-        parsePDL();
-        
-      } catch (e) {
-        showNotification('Failed to load project: ' + e.message, 'error');
+        renderImageGrid();
+        showNotification('Project loaded', 'success');
+      } else {
+        // Plain YAML
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (monacoEditor) monacoEditor.setValue(e.target.result);
+          showNotification('File loaded', 'success');
+        };
+        reader.readAsText(file);
       }
       
-      // Reset input
       e.target.value = '';
     });
 
-    function showNotification(message, type = 'info') {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 60px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        z-index: 2000;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      `;
+    async function saveProject() {
+      const content = monacoEditor ? monacoEditor.getValue() : '';
+      const zip = new JSZip();
       
-      if (type === 'success') {
-        notification.style.background = '#22c55e';
-        notification.style.color = '#fff';
-      } else if (type === 'error') {
-        notification.style.background = '#ef4444';
-        notification.style.color = '#fff';
-      } else {
-        notification.style.background = '#3b82f6';
-        notification.style.color = '#fff';
-      }
+      // Add manifest
+      zip.file('manifest.json', JSON.stringify({
+        version: '0.3',
+        app: 'FrameNote',
+        created: new Date().toISOString()
+      }, null, 2));
       
-      notification.textContent = message;
-      document.body.appendChild(notification);
+      // Add YAML
+      zip.file('presentation.pdl.yaml', content);
       
-      setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
+      // Add images
+      const imagesFolder = zip.folder('images');
+      uploadedImages.forEach((data, name) => {
+        const base64 = data.split(',')[1];
+        imagesFolder.file(name, base64, { base64: true });
+      });
+      
+      // Generate and download
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      let filename = 'presentation';
+      try {
+        const data = jsyaml.load(content);
+        if (data?.meta?.project) {
+          filename = data.meta.project.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_');
+        }
+      } catch (e) {}
+      
+      a.download = `${filename}.fnote`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showNotification('Project saved', 'success');
     }
 
+    // Sample
     function loadSample() {
-      const sample = `# FrameNote v0.2.1 Sample
+      const sample = `# FrameNote v0.3 Sample - Templates & Themes Demo
 meta:
-  project: FrameNote Demo
+  project: FrameNote Templates
   author: FrameNote Team
-  version: "0.2.1"
+  version: "0.3"
   date: "2025-01-01"
-  
-  # Header configuration
+  # Theme can be set here (or use UI selector)
+  # Options: default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
+  theme: default
   header:
     show: true
     text: "{project}"
-  
-  # Footer configuration
+    format:
+      color: "#666666"
+      size: 28
+      background: "#f8f8f8"
   footer:
     show: true
     left: "{author}"
-    center: "{date}"
+    center: ""
     right: "{page} / {total}"
-  
-  # Global format configuration
-  format:
-    title:
-      size: 48
-      weight: 700
-      color: "#1a1a1a"
-    body:
-      size: 24
-      weight: 400
-      color: "#333333"
-    bullet:
-      color: "#3b82f6"
-      size: 6
-    diagram:
-      boxColor: "#3b82f6"
-      textColor: "#ffffff"
+    format:
+      color: "#999999"
+      size: 28
+      background: "#f8f8f8"
 
 slides:
-  - title: Welcome to FrameNote
-    body:
-      text:
-        - Text-first slide authoring
-        - Instant live preview
-        - Structure over decoration
-        - Designed for clarity
+  # Title Template
+  - template: title
+    title: "FrameNote v0.3"
+    subtitle: "Templates & Themes"
+    author: "FrameNote Team"
+    date: "2025"
 
-  - title: Important Announcement
-    format:
-      title:
-        color: "#dc2626"
-        size: 56
-      bullet:
-        color: "#dc2626"
-      diagram:
-        boxColor: "#dc2626"
+  # Agenda Template
+  - template: agenda
+    title: "今日の内容"
+    items:
+      - "テンプレート紹介"
+      - "テーマシステム"
+      - "ダイアグラム"
+      - "まとめ"
+
+  # Section Template
+  - template: section
+    title: "Part 1"
+    subtitle: "テンプレート紹介"
+
+  # Quote Template
+  - template: quote
+    quote: "シンプルさは究極の洗練である"
+    author: "レオナルド・ダ・ヴィンチ"
+
+  # Standard Slide
+  - title: テーマシステム
     body:
       text:
-        - This slide has custom red styling
-        - Title is larger and red
-        - Bullets are also red
+        - UIセレクターまたはmeta.themeで指定
+        - "10種類のプリセット: default, corporate, minimal, dark..."
+        - meta.formatで個別カスタマイズも可能
+
+  # Comparison Template
+  - template: comparison
+    title: "Before / After"
+    left:
+      label: "従来の方法"
+      items:
+        - "GUIで配置"
+        - "手動で調整"
+        - "再現性が低い"
+    right:
+      label: "FrameNote"
+      items:
+        - "テキストで記述"
+        - "自動レイアウト"
+        - "完全な再現性"
+
+  # Timeline Template
+  - template: timeline
+    title: "ロードマップ"
+    events:
+      - date: "v0.1"
+        title: "初期リリース"
+      - date: "v0.2"
+        title: "PDL対応"
+      - date: "v0.3"
+        title: "テンプレート"
+      - date: "v0.4"
+        title: "エクスポート"
+
+  # Diagram
+  - title: プロセスフロー
+    body:
       diagram:
+        type: box-arrow
+        direction: horizontal
         boxes:
-          - Alert
-          - Action
-          - Result
+          - 企画
+          - 設計
+          - 開発
+          - リリース
 
-  - title: Core Features
-    body:
-      text:
-        - Monaco Editor with syntax highlighting
-        - Real-time PDL validation
-        - SVG-based rendering
-        - Multiple layout styles
-      diagram:
-        boxes:
-          - Write
-          - Validate
-          - Preview
-          - Present
+  # Q&A Template
+  - template: qa
+    title: "ご質問はありますか？"
+    contact: "github.com/fukuyori/framenote"
 
-  - title: Green Theme Slide
-    format:
-      title:
-        color: "#16a34a"
-      bullet:
-        color: "#16a34a"
-    body:
-      text:
-        - Each slide can have its own format
-        - Overrides global settings
-        - Returns to default on next slide
-
-  - title: Figure Example
-    body:
-      style: figure_caption
-      figure: https://via.placeholder.com/400x300/3b82f6/ffffff?text=FrameNote
-      caption: Sample figure with caption
-      text:
-        - Images can be uploaded
-        - Referenced by filename
-        - Auto-scaled to fit
-    notes: Presenter notes appear here
-
-  - title: Get Started
-    body:
-      text: "Start writing your presentation using PDL (Presentation Description Language). The editor provides syntax highlighting, auto-completion, and real-time validation to help you create structured slides efficiently."
+  # Thanks Template
+  - template: thanks
+    title: "ありがとうございました"
+    message: "テーマを変更して試してみてください！"
+    contact: "https://github.com/fukuyori/framenote"
 `;
       if (monacoEditor) {
         monacoEditor.setValue(sample);
       }
     }
 
+    // Notification
+    function showNotification(message, type = 'success') {
+      const existing = document.querySelector('.notification');
+      if (existing) existing.remove();
+      
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    // PDF Export
+    async function exportPDF() {
+      if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) {
+        showNotification('No slides to export', 'error');
+        return;
+      }
+
+      showNotification('Generating PDF...', 'success');
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [1920, 1080]
+        });
+
+        const meta = parsedData.meta || {};
+        const globalFormat = meta.format || {};
+        const total = parsedData.slides.length;
+
+        for (let i = 0; i < total; i++) {
+          if (i > 0) {
+            pdf.addPage([1920, 1080], 'landscape');
+          }
+
+          const slide = parsedData.slides[i];
+          const slideFormat = slide.format || {};
+          const format = mergeFormat(globalFormat, slideFormat);
+          
+          const svgString = generateSlideSVG(slide, meta, format, i + 1, total);
+          
+          // Convert SVG to image
+          const img = await svgToImage(svgString);
+          pdf.addImage(img, 'PNG', 0, 0, 1920, 1080);
+        }
+
+        // Set PDF metadata
+        pdf.setProperties({
+          title: meta.project || 'Presentation',
+          author: meta.author || 'FrameNote',
+          creator: 'FrameNote v0.3'
+        });
+
+        // Download
+        let filename = 'presentation';
+        if (meta.project) {
+          filename = meta.project.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_');
+        }
+        pdf.save(`${filename}.pdf`);
+        
+        showNotification('PDF exported successfully!', 'success');
+      } catch (error) {
+        console.error('PDF export error:', error);
+        showNotification('PDF export failed: ' + error.message, 'error');
+      }
+    }
+
+    function svgToImage(svgString) {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1920;
+        canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+        
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = reject;
+        
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        img.src = URL.createObjectURL(blob);
+      });
+    }
+
+    // PPTX Export
+    async function exportPPTX() {
+      if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) {
+        showNotification('No slides to export', 'error');
+        return;
+      }
+
+      showNotification('Generating PPTX...', 'success');
+
+      try {
+        const pptx = new PptxGenJS();
+        const meta = parsedData.meta || {};
+        const theme = getThemeColors(meta);
+        
+        // Set presentation properties
+        pptx.author = meta.author || 'FrameNote';
+        pptx.title = meta.project || 'Presentation';
+        pptx.subject = 'Created with FrameNote v0.3';
+        
+        // Use standard 16:9 layout (13.33" x 7.5")
+        pptx.layout = 'LAYOUT_16x9';
+        
+        // Slide dimensions for calculations
+        const SW = 10;  // slide width in inches for positioning
+        const SH = 5.63; // slide height in inches for positioning
+
+        const globalFormat = meta.format || {};
+        const total = parsedData.slides.length;
+
+        for (let i = 0; i < total; i++) {
+          const slideData = parsedData.slides[i];
+          const slideFormat = slideData.format || {};
+          const format = mergeFormat(globalFormat, slideFormat);
+          const colors = {
+            background: slideFormat.background?.color || format.background?.color || theme.background,
+            accent: slideFormat.accent?.color || format.accent?.color || theme.accent,
+            title: slideFormat.title?.color || format.title?.color || theme.title,
+            text: slideFormat.text?.color || format.text?.color || theme.text,
+            bullet: slideFormat.bullet?.color || format.bullet?.color || theme.bullet,
+          };
+          
+          const slide = pptx.addSlide();
+          slide.background = { color: colors.background.replace('#', '') };
+
+          // Render based on template or standard
+          if (slideData.template) {
+            renderPPTXTemplate(pptx, slide, slideData, colors, meta, i + 1, total);
+          } else {
+            renderPPTXStandard(pptx, slide, slideData, colors, meta, i + 1, total);
+          }
+
+          // Header
+          if (meta.header?.show) {
+            const headerText = replacePlaceholders(meta.header.text || '', meta, i + 1, total);
+            slide.addText(headerText, {
+              x: 0.3, y: 0.1, w: '90%', h: 0.3,
+              fontSize: 10, color: '666666'
+            });
+          }
+
+          // Footer
+          if (meta.footer?.show) {
+            const left = replacePlaceholders(meta.footer.left || '', meta, i + 1, total);
+            const right = replacePlaceholders(meta.footer.right || '', meta, i + 1, total);
+            
+            if (left) {
+              slide.addText(left, {
+                x: 0.3, y: 5.2, w: 3, h: 0.3,
+                fontSize: 9, color: '999999'
+              });
+            }
+            if (right) {
+              slide.addText(right, {
+                x: 10, y: 5.2, w: 3, h: 0.3,
+                fontSize: 9, color: '999999', align: 'right'
+              });
+            }
+          }
+        }
+
+        // Download
+        let filename = 'presentation';
+        if (meta.project) {
+          filename = meta.project.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_');
+        }
+        await pptx.writeFile({ fileName: `${filename}.pptx` });
+        
+        showNotification('PPTX exported successfully!', 'success');
+      } catch (error) {
+        console.error('PPTX export error:', error);
+        showNotification('PPTX export failed: ' + error.message, 'error');
+      }
+    }
+
+    function renderPPTXTemplate(pptx, slide, data, colors, meta, pageNum, total) {
+      const accentHex = colors.accent.replace('#', '');
+      const titleHex = colors.title.replace('#', '');
+      const textHex = colors.text.replace('#', '');
+
+      switch (data.template) {
+        case 'title':
+          slide.addText(data.title || '', {
+            x: 0.5, y: 2, w: '90%', h: 1,
+            fontSize: 44, bold: true, color: titleHex, align: 'center'
+          });
+          if (data.subtitle) {
+            slide.addText(data.subtitle, {
+              x: 0.5, y: 3, w: '90%', h: 0.5,
+              fontSize: 24, color: '666666', align: 'center'
+            });
+          }
+          if (data.author) {
+            slide.addText(data.author, {
+              x: 0.5, y: 4.2, w: '90%', h: 0.4,
+              fontSize: 16, color: '999999', align: 'center'
+            });
+          }
+          if (data.date) {
+            slide.addText(data.date, {
+              x: 0.5, y: 4.6, w: '90%', h: 0.3,
+              fontSize: 14, color: 'bbbbbb', align: 'center'
+            });
+          }
+          // Accent bar
+          slide.addShape('rect', {
+            x: 0, y: 2.2, w: 0.05, h: 1.5, fill: { color: accentHex }
+          });
+          break;
+
+        case 'section':
+          slide.addShape('rect', {
+            x: 3, y: 2.45, w: 7, h: 0.03, fill: { color: accentHex }
+          });
+          slide.addText(data.title || '', {
+            x: 0.5, y: 1.8, w: '90%', h: 0.8,
+            fontSize: 40, bold: true, color: accentHex, align: 'center'
+          });
+          if (data.subtitle) {
+            slide.addText(data.subtitle, {
+              x: 0.5, y: 2.7, w: '90%', h: 0.5,
+              fontSize: 20, color: '666666', align: 'center'
+            });
+          }
+          break;
+
+        case 'quote':
+          slide.addText('"', {
+            x: 0.3, y: 1, w: 1, h: 1,
+            fontSize: 120, color: accentHex, transparency: 80
+          });
+          slide.addText(data.quote || '', {
+            x: 1, y: 1.8, w: 11, h: 1.5,
+            fontSize: 28, italic: true, color: textHex, align: 'center'
+          });
+          if (data.author) {
+            slide.addText('— ' + data.author, {
+              x: 0.5, y: 3.8, w: '90%', h: 0.4,
+              fontSize: 18, bold: true, color: accentHex, align: 'center'
+            });
+          }
+          if (data.source) {
+            slide.addText(data.source, {
+              x: 0.5, y: 4.2, w: '90%', h: 0.3,
+              fontSize: 14, color: '999999', align: 'center'
+            });
+          }
+          break;
+
+        case 'qa':
+          slide.addText('?', {
+            x: 5, y: 0.5, w: 3, h: 3,
+            fontSize: 200, color: accentHex, transparency: 85, align: 'center'
+          });
+          slide.addText(data.title || 'Questions?', {
+            x: 0.5, y: 2.2, w: '90%', h: 0.8,
+            fontSize: 44, bold: true, color: titleHex, align: 'center'
+          });
+          if (data.contact) {
+            slide.addText(data.contact, {
+              x: 0.5, y: 3.2, w: '90%', h: 0.4,
+              fontSize: 18, color: accentHex, align: 'center'
+            });
+          }
+          break;
+
+        case 'thanks':
+          slide.addText(data.title || 'Thank You!', {
+            x: 0.5, y: 2, w: '90%', h: 0.9,
+            fontSize: 48, bold: true, color: titleHex, align: 'center'
+          });
+          if (data.message) {
+            slide.addText(data.message, {
+              x: 0.5, y: 3, w: '90%', h: 0.4,
+              fontSize: 18, color: '666666', align: 'center'
+            });
+          }
+          if (data.contact) {
+            slide.addText(data.contact, {
+              x: 0.5, y: 3.5, w: '90%', h: 0.4,
+              fontSize: 16, color: accentHex, align: 'center'
+            });
+          }
+          break;
+
+        case 'agenda':
+          slide.addText(data.title || 'Agenda', {
+            x: 0.5, y: 0.5, w: 5, h: 0.6,
+            fontSize: 36, bold: true, color: titleHex
+          });
+          slide.addShape('rect', {
+            x: 0.5, y: 1.05, w: 1.5, h: 0.03, fill: { color: accentHex }
+          });
+          const items = data.items || [];
+          items.forEach((item, idx) => {
+            const y = 1.5 + idx * 0.7;
+            slide.addShape('ellipse', {
+              x: 0.6, y: y, w: 0.35, h: 0.35, fill: { color: accentHex }
+            });
+            slide.addText(String(idx + 1), {
+              x: 0.6, y: y, w: 0.35, h: 0.35,
+              fontSize: 14, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle'
+            });
+            slide.addText(item, {
+              x: 1.1, y: y, w: 10, h: 0.4,
+              fontSize: 20, color: textHex
+            });
+          });
+          break;
+
+        case 'comparison':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Left side
+          if (data.left) {
+            slide.addShape('roundRect', {
+              x: 0.3, y: 1.1, w: 6, h: 3.8, fill: { color: accentHex, transparency: 95 }
+            });
+            slide.addText(data.left.label || 'Left', {
+              x: 0.5, y: 1.2, w: 5.6, h: 0.5,
+              fontSize: 24, bold: true, color: accentHex, align: 'center'
+            });
+            (data.left.items || []).forEach((item, idx) => {
+              slide.addText('• ' + item, {
+                x: 0.8, y: 1.8 + idx * 0.5, w: 5, h: 0.4,
+                fontSize: 16, color: textHex
+              });
+            });
+          }
+          // Right side
+          if (data.right) {
+            slide.addShape('roundRect', {
+              x: 6.7, y: 1.1, w: 6, h: 3.8, fill: { color: accentHex, transparency: 90 }
+            });
+            slide.addText(data.right.label || 'Right', {
+              x: 6.9, y: 1.2, w: 5.6, h: 0.5,
+              fontSize: 24, bold: true, color: accentHex, align: 'center'
+            });
+            (data.right.items || []).forEach((item, idx) => {
+              slide.addText('• ' + item, {
+                x: 7.2, y: 1.8 + idx * 0.5, w: 5, h: 0.4,
+                fontSize: 16, color: textHex
+              });
+            });
+          }
+          break;
+
+        case 'timeline':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          const events = data.events || [];
+          if (events.length > 0) {
+            const lineY = 2.8;
+            const startX = 1;
+            const endX = 12;
+            const spacing = (endX - startX) / Math.max(events.length - 1, 1);
+            
+            // Timeline line
+            slide.addShape('rect', {
+              x: startX, y: lineY, w: endX - startX, h: 0.03, fill: { color: 'CCCCCC' }
+            });
+            
+            events.forEach((event, idx) => {
+              const x = events.length === 1 ? 6.5 : startX + idx * spacing;
+              // Circle
+              slide.addShape('ellipse', {
+                x: x - 0.15, y: lineY - 0.12, w: 0.25, h: 0.25, fill: { color: accentHex }
+              });
+              // Date
+              slide.addText(event.date || '', {
+                x: x - 1, y: lineY - 0.7, w: 2, h: 0.4,
+                fontSize: 16, bold: true, color: accentHex, align: 'center'
+              });
+              // Title
+              slide.addText(event.title || '', {
+                x: x - 1, y: lineY + 0.3, w: 2, h: 0.6,
+                fontSize: 14, color: textHex, align: 'center'
+              });
+            });
+          }
+          break;
+
+        default:
+          renderPPTXStandard(pptx, slide, data, colors, meta, pageNum, total);
+      }
+    }
+
+    function renderPPTXStandard(pptx, slide, data, colors, meta, pageNum, total) {
+      const titleHex = colors.title.replace('#', '');
+      const textHex = colors.text.replace('#', '');
+      const bulletHex = colors.bullet.replace('#', '');
+
+      // Title
+      if (data.title) {
+        slide.addText(data.title, {
+          x: 0.5, y: 0.4, w: '90%', h: 0.7,
+          fontSize: 32, bold: true, color: titleHex
+        });
+      }
+
+      // Body
+      if (data.body) {
+        const body = data.body;
+        const text = body.text;
+        
+        if (body.diagram) {
+          // Diagram
+          const boxes = body.diagram.boxes || [];
+          const boxW = 1.5;
+          const gap = 0.8;
+          const totalW = boxes.length * boxW + (boxes.length - 1) * gap;
+          let x = (13 - totalW) / 2;
+          const y = 2.5;
+          
+          boxes.forEach((box, i) => {
+            slide.addShape('roundRect', {
+              x: x, y: y, w: boxW, h: 0.7,
+              fill: { color: bulletHex, transparency: 90 },
+              line: { color: bulletHex, width: 1.5 }
+            });
+            slide.addText(box, {
+              x: x, y: y, w: boxW, h: 0.7,
+              fontSize: 14, bold: true, color: bulletHex, align: 'center', valign: 'middle'
+            });
+            
+            if (i < boxes.length - 1) {
+              slide.addShape('rightArrow', {
+                x: x + boxW + 0.1, y: y + 0.2, w: gap - 0.2, h: 0.3,
+                fill: { color: bulletHex }
+              });
+            }
+            
+            x += boxW + gap;
+          });
+        } else if (typeof text === 'string') {
+          slide.addText(text, {
+            x: 0.5, y: 1.3, w: '90%', h: 3,
+            fontSize: 18, color: textHex
+          });
+        } else if (Array.isArray(text)) {
+          text.forEach((item, idx) => {
+            slide.addText('●  ' + item, {
+              x: 0.5, y: 1.3 + idx * 0.55, w: '90%', h: 0.5,
+              fontSize: 18, color: textHex, bullet: false
+            });
+          });
+        }
+      }
+    }
+
+    // HTML Export
+    function exportHTML() {
+      if (!parsedData || !parsedData.slides || parsedData.slides.length === 0) {
+        showNotification('No slides to export', 'error');
+        return;
+      }
+
+      const meta = parsedData.meta || {};
+      const globalFormat = meta.format || {};
+      const total = parsedData.slides.length;
+      const theme = getThemeColors(meta);
+
+      // Generate SVGs for all slides
+      const slideSVGs = parsedData.slides.map((slide, i) => {
+        const slideFormat = slide.format || {};
+        const format = mergeFormat(globalFormat, slideFormat);
+        return generateSlideSVG(slide, meta, format, i + 1, total);
+      });
+
+      // Build slide divs
+      const slideDivs = slideSVGs.map((svg, i) => 
+        '<div class="slide' + (i === 0 ? '' : ' hidden') + '" data-index="' + i + '">' + svg + '</div>'
+      ).join('\n    ');
+
+      // Build script content separately to avoid parser issues
+      const scriptContent = `
+    let current = 0;
+    const total = ${total};
+    const slides = document.querySelectorAll('.slide');
+    
+    function show(n) {
+      current = Math.max(0, Math.min(n, total - 1));
+      slides.forEach((s, i) => s.classList.toggle('hidden', i !== current));
+      document.getElementById('page').textContent = (current + 1) + ' / ' + total;
+      document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+    }
+    
+    function prev() { show(current - 1); }
+    function next() { show(current + 1); }
+    
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowRight' || e.key === ' ') next();
+      if (e.key === 'Home') show(0);
+      if (e.key === 'End') show(total - 1);
+    });
+    
+    show(0);
+  `;
+
+      const html = '<!DOCTYPE html>\n' +
+'<html lang="ja">\n' +
+'<head>\n' +
+'  <meta charset="UTF-8">\n' +
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'  <title>' + escapeHtml(meta.project || 'Presentation') + ' - FrameNote</title>\n' +
+'  <style>\n' +
+'    * { margin: 0; padding: 0; box-sizing: border-box; }\n' +
+'    body {\n' +
+'      font-family: Inter, Noto Sans JP, sans-serif;\n' +
+'      background: #000;\n' +
+'      color: #fff;\n' +
+'      height: 100vh;\n' +
+'      display: flex;\n' +
+'      flex-direction: column;\n' +
+'      overflow: hidden;\n' +
+'    }\n' +
+'    .slide-container {\n' +
+'      flex: 1;\n' +
+'      display: flex;\n' +
+'      align-items: center;\n' +
+'      justify-content: center;\n' +
+'      padding: 20px;\n' +
+'    }\n' +
+'    .slide {\n' +
+'      width: 100%;\n' +
+'      max-width: 1200px;\n' +
+'      aspect-ratio: 16 / 9;\n' +
+'      background: #fff;\n' +
+'      border-radius: 8px;\n' +
+'      overflow: hidden;\n' +
+'      box-shadow: 0 4px 30px rgba(0,0,0,0.5);\n' +
+'    }\n' +
+'    .slide svg { width: 100%; height: 100%; }\n' +
+'    .slide.hidden { display: none; }\n' +
+'    .controls {\n' +
+'      padding: 15px;\n' +
+'      display: flex;\n' +
+'      justify-content: center;\n' +
+'      align-items: center;\n' +
+'      gap: 15px;\n' +
+'      background: #111;\n' +
+'    }\n' +
+'    .btn {\n' +
+'      padding: 10px 20px;\n' +
+'      border: 1px solid #333;\n' +
+'      background: #1a1a1a;\n' +
+'      color: #fff;\n' +
+'      font-size: 14px;\n' +
+'      border-radius: 6px;\n' +
+'      cursor: pointer;\n' +
+'      transition: all 0.15s;\n' +
+'    }\n' +
+'    .btn:hover { background: #2a2a2a; }\n' +
+'    .page-info { font-size: 14px; color: #888; min-width: 80px; text-align: center; }\n' +
+'    .progress { height: 3px; background: #333; }\n' +
+'    .progress-bar { height: 100%; background: ' + theme.accent + '; transition: width 0.3s; }\n' +
+'  </style>\n' +
+'</head>\n' +
+'<body>\n' +
+'  <div class="progress"><div class="progress-bar" id="progress"></div></div>\n' +
+'  <div class="slide-container">\n' +
+'    ' + slideDivs + '\n' +
+'  </div>\n' +
+'  <div class="controls">\n' +
+'    <button class="btn" onclick="prev()">◀ Prev</button>\n' +
+'    <span class="page-info" id="page">1 / ' + total + '</span>\n' +
+'    <button class="btn" onclick="next()">Next ▶</button>\n' +
+'  </div>\n' +
+'  <scr' + 'ipt>' + scriptContent + '</scr' + 'ipt>\n' +
+'</body>\n' +
+'</html>';
+
+      // Download
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      let filename = 'presentation';
+      if (meta.project) {
+        filename = meta.project.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_');
+      }
+      a.download = filename + '.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showNotification('HTML exported successfully!', 'success');
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
       if (document.getElementById('slideshow-modal').classList.contains('active')) return;
+      if (e.target.closest('#monaco-container')) return;
+      
       if (e.key === 'ArrowLeft') prevSlide();
       if (e.key === 'ArrowRight') nextSlide();
     });

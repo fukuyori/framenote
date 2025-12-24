@@ -1,303 +1,216 @@
-# FrameNote v0.2.1
+# FrameNote v0.3
 
-**FrameNote** は軽量なテキストファーストのスライド作成ツールです。  
-PDL（Presentation Description Language）で構造化されたノートを書くと、即座にプレゼンテーションスライドになります。
+**PDL（Presentation Description Language）によるテキストファーストのスライド作成ツール**
 
-WYSIWYGもドラッグ＆ドロップも不要 — 構造と意図だけで作成。
+FrameNoteは、スライドをYAML形式の宣言的ドキュメントとして扱うブラウザベースのプレゼンテーションツールです。ビジュアルデザインではなくコンテンツ構造に集中できます — レイアウトはFrameNoteが自動で処理します。
 
----
+![FrameNote](https://img.shields.io/badge/version-0.3-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
-## ✨ v0.2.1 の新機能
+## ✨ 特徴
 
-- **ヘッダー＆フッター** - プロジェクト名、作成者、日付、ページ番号を表示
-- **FormatObject** - フォント、サイズ、色をカスタマイズ
-- **スライド個別Format** - グローバル設定を個別スライドで上書き
-- **プレースホルダー** - `{project}`, `{author}`, `{date}`, `{page}`, `{total}`
+### 🎯 コアコンセプト
+- **構造優先** — デザインではなくコンテンツを書く
+- **テキストファースト** — コードエディタで完全キーボード操作
+- **セットアップ不要** — 単一HTMLファイル、モダンブラウザで即実行
 
----
+### 📝 PDL（Presentation Description Language）
+- YAMLベースの宣言的フォーマット
+- 人間が読みやすく、バージョン管理に最適
+- コンテンツとプレゼンテーションの分離
 
-## 🚀 はじめに
+### 🎨 テンプレート（8種類）
+| テンプレート | 説明 |
+|-------------|------|
+| `title` | タイトル、サブタイトル、著者、日付を含むオープニングスライド |
+| `section` | セクション区切り |
+| `quote` | 引用文（著者・出典付き） |
+| `qa` | Q&A / 質問スライド |
+| `thanks` | エンディング / サンキュースライド |
+| `agenda` | アジェンダ / 目次 |
+| `comparison` | 左右比較 |
+| `timeline` | タイムライン |
 
-### 要件
+### 🎭 テーマ（10種類）
+`default` · `corporate` · `minimal` · `dark` · `nature` · `sunset` · `ocean` · `lavender` · `rose` · `midnight`
 
-- モダンブラウザ（Chrome、Edge、Firefox、Safari）
-- ビルドツール不要
-- インストール不要
+### 📤 エクスポート形式
+- **PDF** — 印刷用ドキュメント
+- **PPTX** — Microsoft PowerPoint（ネイティブシェイプ）
+- **HTML** — スタンドアロンスライドショー
 
-### 実行
+### ⚡ エディタ機能
+- Monaco Editor（VS Codeエンジン）
+- PDLシンタックスハイライト
+- コンテキスト認識コード補完（Ctrl+Space）
+- リアルタイムプレビュー
+- YAMLバリデーション＆エラーマーカー
 
-`framenote-v0.2.html` をブラウザで開くだけ。
+## 🚀 クイックスタート
 
----
-
-## 📖 機能
-
-### PDL（Presentation Description Language）
-
-YAML形式でスライドを記述：
+1. `framenote-v0.3.html` をダウンロード
+2. モダンブラウザで開く（Chrome, Firefox, Edge, Safari）
+3. 書き始める！
 
 ```yaml
 meta:
-  project: マイプレゼンテーション
-  author: 作成者名
-  date: "2025-01-01"
+  project: "初めてのプレゼンテーション"
+  author: "あなたの名前"
+  theme: default
 
 slides:
-  - title: 最初のスライド
+  - template: title
+    title: "Hello FrameNote"
+    subtitle: "初めてのプレゼンテーション"
+    author: "あなたの名前"
+    date: "2025"
+
+  - title: "はじめに"
     body:
       text:
-        - ポイント1
-        - ポイント2
+        - "FrameNoteでプレゼンが簡単に"
+        - "YAMLを書くだけで美しいスライド"
+        - "PDF、PPTX、HTMLにエクスポート"
 ```
 
-### ボディスタイル
+## 📖 ドキュメント
 
-| スタイル | 説明 | 用途 |
-|----------|------|------|
-| `text` | テキストのみ（デフォルト） | シンプルなコンテンツ |
-| `figure_caption` | 図＋キャプション＋テキスト | 説明付き画像 |
-| `figure_bullets` | 図＋箇条書き | リスト付き画像 |
-| `split` | 左右または上下分割 | 比較、2カラム |
+- [チュートリアル（日本語）](TUTORIAL-JP.md)
+- [Tutorial (English)](TUTORIAL.md)
+- [README English](README.md)
 
-### ヘッダー＆フッター
+## 🎮 キーボードショートカット
+
+| ショートカット | アクション |
+|---------------|-----------|
+| `Ctrl+Space` | コード補完を開く |
+| `Tab` | 補完を確定 / スニペット展開 |
+| `Ctrl+S` | プロジェクト保存（.fnote） |
+| `F11` または「Present」クリック | スライドショー開始 |
+| `Esc` | スライドショー終了 |
+| `←` / `→` | スライド移動 |
+
+## 📁 ファイル形式
+
+### .fnote（プロジェクトファイル）
+以下を含むZIPアーカイブ：
+```
+project.fnote
+├── manifest.json          # プロジェクトメタデータ
+├── presentation.pdl.yaml  # PDLコンテンツ
+└── images/                # アップロード画像
+    └── *.png, *.jpg
+```
+
+### .pdl.yaml（PDLファイル）
+PDL構造のプレーンYAMLファイル。
+
+## 🔧 PDL構造
 
 ```yaml
 meta:
+  project: "プロジェクト名"
+  author: "著者"
+  date: "2025-01-01"
+  version: "1.0"
+  theme: default
   header:
     show: true
-    logo: "logo.png"        # オプション
     text: "{project}"
-  
   footer:
     show: true
     left: "{author}"
-    center: "{date}"
     right: "{page} / {total}"
+
+slides:
+  - title: "スライドタイトル"
+    body:
+      text:
+        - "箇条書き1"
+        - "箇条書き2"
 ```
 
-#### プレースホルダー
+## 🎨 カスタマイズ
 
-| プレースホルダー | 説明 |
-|-----------------|------|
-| `{project}` | metaのプロジェクト名 |
-| `{author}` | metaの作成者 |
-| `{date}` | metaの日付 |
-| `{version}` | metaのバージョン |
-| `{page}` | 現在のページ番号 |
-| `{total}` | 総ページ数 |
-
-### 書式カスタマイズ
-
-#### グローバルFormat（全スライド）
-
+### グローバルフォーマット（meta内）
 ```yaml
 meta:
   format:
+    accent:
+      color: "#6366f1"
     title:
-      font: "'Inter', sans-serif"
+      color: "#1e1b4b"
       size: 48
-      weight: 700
-      color: "#1a1a1a"
-    body:
-      font: "'Noto Sans JP', sans-serif"
-      size: 24
-      weight: 400
-      color: "#333333"
+    text:
+      color: "#334155"
+      size: 28
     bullet:
-      color: "#3b82f6"
-      size: 6
-    caption:
-      size: 16
-      color: "#666666"
-    note:
-      size: 14
-      style: italic
-      color: "#888888"
-    diagram:
-      boxColor: "#3b82f6"
-      textColor: "#ffffff"
-      arrowColor: "#666666"
+      color: "#6366f1"
 ```
 
-#### スライド個別Format（上書き）
-
+### スライド単位のフォーマット上書き
 ```yaml
 slides:
-  - title: 重要なスライド
+  - title: "重要なスライド"
     format:
+      background:
+        color: "#dc2626"
       title:
-        color: "#dc2626"
-        size: 56
-      bullet:
-        color: "#dc2626"
+        color: "#ffffff"
     body:
       text:
-        - このスライドは赤いスタイル
+        - "このスライドはカスタムカラーです"
 ```
 
-#### Format優先順位
+## 🖼️ 画像
 
-```
-デフォルト < meta.format（グローバル） < slide.format（個別）
-```
-
-### ダイアグラム
+1. 画像をImagesタブにドラッグ&ドロップ
+2. PDLで参照：
 
 ```yaml
-body:
-  text:
-    - プロセス概要
-  diagram:
-    boxes:
-      - ステップ1
-      - ステップ2
-      - ステップ3
+- title: "画像付きスライド"
+  body:
+    style: figure_caption
+    figure: my-image.png
+    caption: "画像のキャプション"
 ```
 
-### 分割レイアウト
+## 📊 ダイアグラム
 
 ```yaml
-body:
-  style: split
-  split:
-    direction: horizontal   # または vertical
-    ratio: 0.5              # 0.1 - 0.9
-    a:
-      text:
-        - 左側コンテンツ
-    b:
-      figure: image.png
+- title: "プロセスフロー"
+  body:
+    diagram:
+      type: box-arrow
+      direction: horizontal
+      boxes:
+        - "ステップ1"
+        - "ステップ2"
+        - "ステップ3"
 ```
 
-### 発表者ノート
+## 🔄 プレースホルダー
 
-```yaml
-slides:
-  - title: スライドタイトル
-    body:
-      text:
-        - コンテンツ
-    notes: "発表者用メモ（プレビューに表示、プレゼンでは非表示）"
-```
+header/footerで使用可能：
+- `{project}` — プロジェクト名
+- `{author}` — 著者名
+- `{date}` — 日付
+- `{page}` — 現在のページ番号
+- `{total}` — 総ページ数
 
----
+## 📋 動作要件
 
-## 🖼️ 画像管理
+- JavaScriptが有効なモダンブラウザ
+- サーバー不要
+- インストール不要
 
-1. **Images** タブをクリック
-2. 画像をドラッグ＆ドロップ、またはクリックしてアップロード
-3. サムネイルをクリックしてファイル名をコピー
-4. PDLでファイル名を使用：`figure: image.png`
-
----
-
-## 💾 プロジェクトファイル（.fnote）
-
-PDLと画像を含む完全なプロジェクトを保存・読み込み。
-
-### 保存
-- **Save** ボタンをクリック
-- `{プロジェクト名}.fnote`（ZIP形式）がダウンロードされる
-
-### 開く
-- **Open** ボタンをクリック
-- `.fnote` ファイルを選択
-- PDLと画像が復元される
-
-### ファイル構造
-
-```
-project.fnote (ZIP)
-├── manifest.json
-├── presentation.pdl.yaml
-└── images/
-    ├── image1.png
-    └── image2.jpg
-```
-
----
-
-## ⌨️ エディタ機能
-
-**Monaco Editor**（VS Codeのコア）を搭載：
-
-- PDLのシンタックスハイライト
-- リアルタイム検証
-- コード補完
-- スニペット（Tabで展開）
-
-### スニペット
-
-| トリガー | 説明 |
-|---------|------|
-| `slide` | 基本スライド |
-| `slide-figure` | 図付きスライド |
-| `slide-split` | 分割レイアウトスライド |
-| `slide-format` | カスタムformat付きスライド |
-| `diagram` | ボックス矢印ダイアグラム |
-| `header-footer` | ヘッダー/フッター設定 |
-| `format` | 基本format設定 |
-| `format-full` | 全format設定 |
-
----
-
-## ✅ 検証
-
-リアルタイムPDL検証とエラーコード：
-
-| コード | 種別 | 説明 |
-|--------|------|------|
-| `PDL-E*` | エラー | 構造的な問題 |
-| `PDL-W*` | 警告 | スタイルの推奨事項 |
-
----
-
-## 🎬 プレゼンテーションモード
-
-1. **Present** ボタンをクリック
-2. 矢印キーまたはボタンで移動
-3. `Escape` キーで終了
-
----
-
-## 📁 プロジェクト構造
-
-```
-/
-├── framenote-v0.2.html   # アプリケーション（単一ファイル）
-├── README.md             # 英語版ドキュメント
-├── README-JP.md          # 日本語版ドキュメント
-├── ROADMAP.md            # 開発ロードマップ
-└── sample-all-patterns.pdl.yaml  # 全PDLパターン
-```
-
----
-
-## 🗺️ ロードマップ
-
-| バージョン | 機能 |
-|------------|------|
-| v0.2.1 | ヘッダー/フッター、FormatObject、スライド個別format |
-| v0.3 | PDF出力、PPTX出力、テーマ |
-| v0.4 | 高度なダイアグラム（縦方向、分岐） |
-| v0.5 | クラウドストレージ、共有 |
-| v1.0 | 安定版、CLI、プラグイン |
-
----
-
-## 📜 ライセンス
+## 📄 ライセンス
 
 MIT License
 
----
+## 🤝 コントリビュート
 
-## 🔗 リンク
-
-- [GitHubリポジトリ](https://github.com/fukuyori/framenote)
-- [PDL仕様書](./pdl.md)
+Issue、Pull Requestを歓迎します！
 
 ---
 
-**バージョン:** 0.2.1  
-**状態:** 機能的、実験的  
-**フォーカス:** PDL言語設計とオーサリング体験
+クリックよりテキストを好むプレゼンテーション作成者のために ❤️ を込めて作りました。
