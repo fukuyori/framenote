@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### Detailed Specification v0.5 (FrameNote)
+### Detailed Specification v0.5.1 (FrameNote)
 
 ---
 
@@ -805,7 +805,7 @@ The following are reserved for future versions:
 * PDL v0.x: Experimental
 * PDL v1.0: Backward compatibility guaranteed
 
-FrameNote v0.5 conforms to **PDL v0.5**.
+FrameNote v0.5.1.1 conforms to **PDL v0.5.1.1**.
 
 ---
 
@@ -851,7 +851,7 @@ meta:
 slides:
   # Title slide
   - template: title
-    title: "PDL v0.5 Demo"
+    title: "PDL v0.5.1.1 Demo"
     subtitle: "Presentation Description Language"
     author: "FrameNote"
     date: "2025"
@@ -911,6 +911,15 @@ slides:
 
 ## Appendix C: Changelog
 
+### v0.5.1
+
+* VIM mode improvements
+* Added VIM folding commands: zo, zc, za, zO, zC, zR, zM, zj, zk
+* Added VIM scroll commands: zz, zt, zb, z., z-, z<Enter>
+* Added VIM indent commands: >>, <<
+* Fixed Shift key handling for uppercase VIM commands
+* Templates sorted alphabetically
+
 ### v0.5
 
 * Fixed font selector UI synchronization
@@ -921,6 +930,7 @@ slides:
 * Added video embedding (YouTube, Vimeo, local files)
 * Added percentage size specification (video, figure, shapes, table columns)
 * Added 13 new templates: image, steps, cards, twocolumn, threecolumn, blank, bigtext, mindmap, video, table, code, flowchart
+* Added VIM mode for editor (Ctrl+` or button)
 
 ### v0.4
 

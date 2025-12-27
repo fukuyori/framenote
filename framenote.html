@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrameNote v0.5 - Text-First Slide Tool</title>
+  <title>FrameNote v0.5.1 - Text-First Slide Tool</title>
   <!-- Load all libraries BEFORE Monaco's AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -323,6 +323,53 @@
 
     #monaco-container {
       flex: 1;
+    }
+
+    /* VIM Mode */
+    .vim-status-bar {
+      display: none;
+      height: 24px;
+      background: #1e1e1e;
+      border-top: 1px solid var(--border);
+      padding: 0 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #d4d4d4;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .vim-status-bar.active {
+      display: flex;
+    }
+
+    .vim-command-line {
+      flex: 1;
+      color: #d4d4d4;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .vim-toggle-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .vim-toggle-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .vim-toggle-btn.active {
+      background: #4a9f4a;
+      color: #000;
+      border-color: #4a9f4a;
     }
 
     /* Images Panel */
@@ -730,7 +777,7 @@
   <header class="header">
     <div class="logo">
       <div class="logo-icon">F</div>
-      <h1>FrameNote <span class="logo-version">v0.5</span></h1>
+      <h1>FrameNote <span class="logo-version">v0.5.1</span></h1>
     </div>
     <div class="header-actions">
       <div class="theme-selector">
@@ -780,10 +827,15 @@
       <div class="editor-tabs">
         <div class="editor-tab active" data-tab="editor">PDL Editor</div>
         <div class="editor-tab" data-tab="images">Images</div>
+        <div style="flex: 1;"></div>
+        <button class="vim-toggle-btn" id="vim-toggle" onclick="toggleVimMode()" title="Toggle VIM mode (Ctrl+`)">VIM</button>
       </div>
       
       <div class="editor-content active" data-content="editor">
         <div id="monaco-container"></div>
+        <div class="vim-status-bar" id="vim-status-bar">
+          <span class="vim-command-line" id="vim-command-line"></span>
+        </div>
       </div>
       
       <div class="editor-content" data-content="images">
@@ -965,6 +1017,8 @@
     let currentFont = 'sans';
     let themeChangedByUI = false;  // フラグ: UIセレクターからの変更か
     let fontChangedByUI = false;   // フラグ: UIセレクターからの変更か
+    let vimModeEnabled = false;
+    let vimMode = null;
 
     // Font presets
     const FONT_PRESETS = {
@@ -1117,6 +1171,44 @@
     };
 
     require(['vs/editor/editor.main'], function() {
+      // Load monaco-vim dynamically after Monaco is ready
+      // Temporarily hide AMD define to load monaco-vim as a global
+      const originalDefine = window.define;
+      const originalDefineAmd = window.define && window.define.amd;
+      
+      // Disable AMD temporarily
+      if (window.define && window.define.amd) {
+        window.define.amd = false;
+      }
+      
+      const vimScript = document.createElement('script');
+      vimScript.src = 'https://cdn.jsdelivr.net/npm/monaco-vim@0.4.0/dist/monaco-vim.js';
+      vimScript.onload = function() {
+        // Restore AMD
+        if (originalDefine && originalDefineAmd) {
+          window.define.amd = originalDefineAmd;
+        }
+        console.log('monaco-vim loaded successfully');
+        window.vimModeAvailable = true;
+        const toggleBtn = document.getElementById('vim-toggle');
+        if (toggleBtn) {
+          toggleBtn.title = 'Toggle VIM mode (Ctrl+`)';
+        }
+      };
+      vimScript.onerror = function() {
+        // Restore AMD
+        if (originalDefine && originalDefineAmd) {
+          window.define.amd = originalDefineAmd;
+        }
+        console.error('monaco-vim failed to load');
+        const toggleBtn = document.getElementById('vim-toggle');
+        if (toggleBtn) {
+          toggleBtn.style.opacity = '0.5';
+          toggleBtn.title = 'VIM mode unavailable';
+        }
+      };
+      document.head.appendChild(vimScript);
+
       // Register PDL language
       monaco.languages.register({ id: 'pdl' });
       
@@ -1746,6 +1838,10 @@
         tabSize: 2,
         wordWrap: 'on',
         renderWhitespace: 'selection',
+        folding: true,
+        foldingStrategy: 'indentation',
+        foldingHighlight: true,
+        showFoldingControls: 'always',
         quickSuggestions: {
           other: 'on',
           comments: 'off',
@@ -1788,8 +1884,318 @@
         });
       }
 
+      // VIM mode keyboard shortcut (Ctrl+`)
+      document.addEventListener('keydown', function(e) {
+        // Check for Ctrl+` using multiple methods for cross-browser/keyboard compatibility
+        const isBackquote = e.code === 'Backquote' || e.key === '`' || e.keyCode === 192;
+        if (e.ctrlKey && isBackquote) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleVimMode();
+        }
+      });
+
       loadSample();
     });
+
+    // VIM Mode toggle
+    function toggleVimMode() {
+      const statusBar = document.getElementById('vim-status-bar');
+      const toggleBtn = document.getElementById('vim-toggle');
+      
+      if (vimModeEnabled) {
+        // Disable VIM mode
+        if (vimMode) {
+          vimMode.dispose();
+          vimMode = null;
+        }
+        // Remove custom key handler
+        if (window._vimKeyHandler) {
+          document.removeEventListener('keydown', window._vimKeyHandler, true);
+          window._vimKeyHandler = null;
+        }
+        vimModeEnabled = false;
+        statusBar.classList.remove('active');
+        toggleBtn.classList.remove('active');
+        // Clear command line
+        document.getElementById('vim-command-line').textContent = '';
+        showNotification('VIM mode disabled', 'info');
+      } else {
+        // Check if MonacoVim is available
+        const VimModule = window.MonacoVim || (typeof MonacoVim !== 'undefined' ? MonacoVim : null);
+        
+        if (!VimModule) {
+          if (!window.vimModeAvailable) {
+            showNotification('VIM mode is loading... Please try again.', 'warning');
+          } else {
+            showNotification('VIM mode failed to initialize', 'error');
+          }
+          return;
+        }
+        
+        if (!monacoEditor) {
+          showNotification('Editor not ready', 'error');
+          return;
+        }
+        
+        try {
+          const statusBarNode = document.getElementById('vim-command-line');
+          vimMode = VimModule.initVimMode(monacoEditor, statusBarNode);
+          
+          // Add custom VIM commands for screen scrolling
+          setupVimCustomCommands(VimModule);
+          
+          vimModeEnabled = true;
+          statusBar.classList.add('active');
+          toggleBtn.classList.add('active');
+          showNotification('VIM mode enabled (Ctrl+` to toggle)', 'success');
+        } catch (e) {
+          console.error('Failed to initialize VIM mode:', e);
+          showNotification('Failed to initialize VIM mode: ' + e.message, 'error');
+        }
+      }
+    }
+    
+    // Setup custom VIM commands
+    function setupVimCustomCommands(VimModule) {
+      // Track z-prefix key sequence
+      let zPending = false;
+      let lastKeyTime = 0;
+      
+      // Track > and < key sequences for indent  
+      let shiftKeyPending = null;
+      let shiftKeyTime = 0;
+      
+      // Key handler for VIM commands (z-prefix and indent)
+      const vimKeyHandler = function(e) {
+        if (!vimModeEnabled) return;
+        
+        // Check if editor has focus
+        const activeElement = document.activeElement;
+        const editorContainer = document.getElementById('monaco-container');
+        if (!editorContainer || !editorContainer.contains(activeElement)) {
+          return;
+        }
+        
+        const now = Date.now();
+        const key = e.key;
+        
+        // Check if in insert mode
+        const statusText = document.getElementById('vim-command-line')?.textContent || '';
+        const inInsertMode = statusText.toLowerCase().includes('insert');
+        
+        if (inInsertMode) {
+          zPending = false;
+          shiftKeyPending = null;
+          return;
+        }
+        
+        // Reset pending states if too much time passed
+        if (now - lastKeyTime > 500) {
+          zPending = false;
+          shiftKeyPending = null;
+        }
+        lastKeyTime = now;
+        
+        // Handle > key for indent
+        if (key === '>') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
+          if (shiftKeyPending === '>') {
+            // >> - indent
+            shiftKeyTime = now;
+            setTimeout(() => {
+              monacoEditor.trigger('keyboard', 'editor.action.indentLines', null);
+            }, 0);
+            shiftKeyPending = null;
+          } else {
+            shiftKeyPending = '>';
+            shiftKeyTime = now;
+          }
+          return false;
+        }
+        
+        // Handle < key for outdent
+        if (key === '<') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
+          if (shiftKeyPending === '<') {
+            // << - outdent
+            shiftKeyTime = now;
+            setTimeout(() => {
+              monacoEditor.trigger('keyboard', 'editor.action.outdentLines', null);
+            }, 0);
+            shiftKeyPending = null;
+          } else {
+            shiftKeyPending = '<';
+            shiftKeyTime = now;
+          }
+          return false;
+        }
+        
+        // Reset shift pending on other keys (except Shift itself)
+        if (shiftKeyPending && key !== 'Shift') {
+          shiftKeyPending = null;
+        }
+        
+        // Handle z-prefix commands
+        if (zPending) {
+          // Ignore modifier keys alone - wait for the actual key
+          if (key === 'Shift' || key === 'Control' || key === 'Alt' || key === 'Meta') {
+            return;
+          }
+          
+          zPending = false;
+          
+          const line = monacoEditor.getPosition().lineNumber;
+          const visibleRanges = monacoEditor.getVisibleRanges();
+          const visibleLines = visibleRanges.length > 0 ? 
+            visibleRanges[0].endLineNumber - visibleRanges[0].startLineNumber : 20;
+          
+          let handled = true;
+          const lowerKey = key.toLowerCase();
+          const isShift = e.shiftKey;
+          
+          // Handle uppercase commands with shift key check
+          if (isShift && lowerKey === 'r') {
+            // zR - unfold all
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            setTimeout(() => {
+              const action = monacoEditor.getAction('editor.unfoldAll');
+              if (action) action.run();
+            }, 0);
+            return false;
+          }
+          
+          if (isShift && lowerKey === 'm') {
+            // zM - fold all
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            setTimeout(() => {
+              const action = monacoEditor.getAction('editor.foldAll');
+              if (action) action.run();
+            }, 0);
+            return false;
+          }
+          
+          if (isShift && lowerKey === 'o') {
+            // zO - unfold recursively
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            setTimeout(() => {
+              const action = monacoEditor.getAction('editor.unfoldRecursively');
+              if (action) action.run();
+            }, 0);
+            return false;
+          }
+          
+          if (isShift && lowerKey === 'c') {
+            // zC - fold recursively
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            setTimeout(() => {
+              const action = monacoEditor.getAction('editor.foldRecursively');
+              if (action) action.run();
+            }, 0);
+            return false;
+          }
+          
+          // Handle lowercase commands
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
+          switch (lowerKey) {
+            case 'z': // zz - center
+              monacoEditor.revealLineInCenter(line);
+              break;
+            case 't': // zt - top
+              monacoEditor.setScrollTop(monacoEditor.getTopForLineNumber(line));
+              break;
+            case 'b': // zb - bottom
+              const targetTop = Math.max(1, line - visibleLines + 1);
+              monacoEditor.setScrollTop(monacoEditor.getTopForLineNumber(targetTop));
+              break;
+            case 'enter': // z<Enter> - top with cursor at first non-blank
+              monacoEditor.setScrollTop(monacoEditor.getTopForLineNumber(line));
+              break;
+            case '.': // z. - center with cursor at first non-blank
+              monacoEditor.revealLineInCenter(line);
+              break;
+            case '-': // z- - bottom with cursor at first non-blank
+              const bottomTarget = Math.max(1, line - visibleLines + 1);
+              monacoEditor.setScrollTop(monacoEditor.getTopForLineNumber(bottomTarget));
+              break;
+            // Folding commands (lowercase)
+            case 'o': // zo - unfold
+              if (!isShift) {
+                setTimeout(() => {
+                  const action = monacoEditor.getAction('editor.unfold');
+                  if (action) action.run();
+                }, 0);
+              }
+              break;
+            case 'c': // zc - fold
+              if (!isShift) {
+                setTimeout(() => {
+                  const action = monacoEditor.getAction('editor.fold');
+                  if (action) action.run();
+                }, 0);
+              }
+              break;
+            case 'a': // za - toggle fold
+              setTimeout(() => {
+                const action = monacoEditor.getAction('editor.toggleFold');
+                if (action) action.run();
+              }, 0);
+              break;
+            case 'j': // zj - move to next fold
+              setTimeout(() => {
+                const action = monacoEditor.getAction('editor.gotoNextFold');
+                if (action) action.run();
+              }, 0);
+              break;
+            case 'k': // zk - move to previous fold
+              setTimeout(() => {
+                const action = monacoEditor.getAction('editor.gotoPreviousFold');
+                if (action) action.run();
+              }, 0);
+              break;
+            default:
+              handled = false;
+          }
+          
+          if (handled) {
+            return false;
+          }
+        }
+        
+        // Start z-prefix sequence (only in normal mode)
+        if (key === 'z' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          zPending = true;
+          return;
+        }
+      };
+      
+      // Remove old handler if exists
+      if (window._vimKeyHandler) {
+        document.removeEventListener('keydown', window._vimKeyHandler, true);
+      }
+      window._vimKeyHandler = vimKeyHandler;
+      // Use capture phase to intercept before monaco-vim
+      document.addEventListener('keydown', vimKeyHandler, true);
+      
+      console.log('VIM custom key handlers registered');
+    }
 
     // Tab switching
     document.querySelectorAll('.editor-tab').forEach(tab => {
@@ -5073,11 +5479,11 @@
 
     // Sample
     function loadSample() {
-      const sample = `# FrameNote v0.5 Sample - Templates & Themes Demo
+      const sample = `# FrameNote v0.5.1 Sample - Templates & Themes Demo
 meta:
   project: FrameNote Templates
   author: FrameNote Team
-  version: "0.5"
+  version: "0.5.1"
   date: "2025-01-01"
   # Theme can be set here (or use UI selector)
   # Options: default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
@@ -5106,7 +5512,7 @@ meta:
 slides:
   # Title Template
   - template: title
-    title: "FrameNote v0.5"
+    title: "FrameNote v0.5.1"
     subtitle: "Templates & Themes"
     author: "FrameNote Team"
     date: "2025"
@@ -5164,7 +5570,7 @@ slides:
         title: "PDL対応"
       - date: "v0.3"
         title: "テンプレート"
-      - date: "v0.5"
+      - date: "v0.5.1"
         title: "エクスポート"
 
   # Diagram
@@ -5350,7 +5756,7 @@ slides:
         pdf.setProperties({
           title: meta.project || 'Presentation',
           author: meta.author || 'FrameNote',
-          creator: 'FrameNote v0.5'
+          creator: 'FrameNote v0.5.1'
         });
 
         // Download
@@ -5403,7 +5809,7 @@ slides:
         // Set presentation properties
         pptx.author = meta.author || 'FrameNote';
         pptx.title = meta.project || 'Presentation';
-        pptx.subject = 'Created with FrameNote v0.5';
+        pptx.subject = 'Created with FrameNote v0.5.1';
         
         // Use standard 16:9 layout (13.33" x 7.5")
         pptx.layout = 'LAYOUT_16x9';

@@ -340,6 +340,20 @@ meta:
 |-----|--------|
 | `←` `→` | Navigate slides |
 | `Ctrl+S` | Save project |
+| `Ctrl+\`` | Toggle VIM mode |
+
+### VIM Mode
+When VIM mode is enabled, standard VIM keybindings are available:
+- `i` - Insert mode
+- `Esc` - Normal mode
+- `v` - Visual mode
+- `h` `j` `k` `l` - Navigation
+- `:w` - Save (triggers Ctrl+S)
+- `:q` - Exit VIM mode
+- `>>` / `<<` - Indent / Outdent line
+- `zz` / `zt` / `zb` - Scroll cursor to center / top / bottom
+- `zo` / `zc` / `za` - Open / Close / Toggle fold
+- `zR` / `zM` - Open all / Close all folds
 
 ### Slideshow
 | Key | Action |
@@ -362,6 +376,7 @@ meta:
 ## Dependencies (via CDN)
 
 - Monaco Editor - Code editing
+- monaco-vim - VIM keybindings
 - js-yaml - YAML parsing
 - jsPDF - PDF export
 - PptxGenJS - PowerPoint export
@@ -374,7 +389,15 @@ MIT License
 
 ## Changelog
 
-### v0.5 (Current)
+### v0.5.1 (Current)
+- VIM mode improvements
+- Added VIM folding commands: zo, zc, za, zO, zC, zR, zM, zj, zk
+- Added VIM scroll commands: zz, zt, zb, z., z-, z<Enter>
+- Added VIM indent commands: >>, <<
+- Fixed Shift key handling for uppercase VIM commands
+- Templates sorted alphabetically
+
+### v0.5
 - Fixed font selector dropdown not working
 - Improved font selection UI/PDL synchronization
 - Added fullscreen presentation mode
@@ -385,6 +408,7 @@ MIT License
 - Video embedding (YouTube, Vimeo, local files)
 - Percentage size specification for video, figure, shapes, table columns
 - 13 new templates: image, steps, cards, twocolumn, threecolumn, blank, bigtext, mindmap, video, table, code, flowchart
+- VIM mode for editor (Ctrl+` or button to toggle)
 
 ### v0.4
 - Table column alignment (left/center/right)
