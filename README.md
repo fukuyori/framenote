@@ -34,6 +34,28 @@ FrameNote is a declarative slide presentation tool using PDL (Presentation Descr
 - **Sequence Diagrams** - UML sequence diagrams
 - **Images** - Drag & drop upload
 
+### Templates (21 types)
+- `agenda` - Agenda/table of contents
+- `bigtext` - Large impact text
+- `blank` - Empty slide for custom content
+- `cards` - Card grid layout
+- `code` - Code block slide
+- `comparison` - Side-by-side comparison
+- `flowchart` - Flowchart slide
+- `image` - Full-screen image with caption
+- `mindmap` - Mind map diagram
+- `qa` - Q&A slide
+- `quote` - Quote with attribution
+- `section` - Section divider
+- `steps` - Process flow (1→2→3)
+- `table` - Table slide
+- `thanks` - Thank you slide
+- `threecolumn` - Three column layout
+- `timeline` - Timeline with events
+- `title` - Title slide with subtitle
+- `twocolumn` - Two column layout
+- `video` - Video embed slide
+
 ### Export
 - **PDF** - Print-ready document
 - **PPTX** - PowerPoint format
@@ -163,6 +185,88 @@ slides:
 - `->` - Sync message
 - `-x` - Failed/crossed
 
+### Video Embeds
+
+```yaml
+- title: Demo Video
+  body:
+    video:
+      url: "https://www.youtube.com/watch?v=VIDEO_ID"
+      width: "80%"    # 80% of slide width
+      height: "50%"   # 50% of slide height
+```
+
+**Supported platforms:**
+- YouTube (thumbnail + click to open)
+- Vimeo (thumbnail + click to open)
+- Local video files (MP4, WebM) - inline playback
+
+**Options:**
+- `url` - Video URL or local file path
+- `width` / `height` - Video size (px or %, default: 960x540)
+- `x` / `y` - Position (px or %, default: center)
+- `autoplay` - Auto-play (local videos only)
+- `controls` - Show controls (local videos only)
+
+**Note:** YouTube/Vimeo videos display as clickable thumbnails that open in a new tab. Local MP4/WebM files play inline.
+
+### Percentage Size Specification
+
+Size and position values support both `px` (number) and `%` (string) formats:
+
+```yaml
+# Video - relative to slide
+video:
+  width: "80%"
+  height: "50%"
+
+# Figure - relative to slide
+figureStyle:
+  width: "40%"
+  height: "35%"
+  x: "55%"
+  y: "20%"
+
+# Shapes - relative to slide
+shapes:
+  - type: rect
+    x: "10%"
+    y: "20%"
+    width: "30%"
+    height: "40%"
+
+# Table columns - relative to table area
+tableStyle:
+  colWidths: ["30%", "40%", "30%"]
+```
+
+### Mind Map
+
+```yaml
+- template: mindmap
+  title: Project Overview
+  mindmap:
+    center: "Main Topic"
+    layout: radial  # radial, tree, tree-down
+    branches:
+      - topic: "Branch 1"
+        items:
+          - "Item 1"
+          - "Item 2"
+      - topic: "Branch 2"
+        items:
+          - "Item A"
+          - "Item B"
+      - topic: "Branch 3"
+        items:
+          - "Sub item"
+```
+
+**Layout options:**
+- `radial` - Circular layout (default)
+- `tree` - Left to right tree
+- `tree-down` - Top to bottom tree
+
 ### Shapes
 
 ```yaml
@@ -231,11 +335,22 @@ meta:
 
 ## Keyboard Shortcuts
 
+### Editor
 | Key | Action |
 |-----|--------|
 | `←` `→` | Navigate slides |
 | `Ctrl+S` | Save project |
-| `F11` | Fullscreen |
+
+### Slideshow
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate slides |
+| `Space` | Next slide |
+| `F` | Toggle fullscreen |
+| `L` | Toggle laser pointer |
+| `Esc` | Exit slideshow |
+| Click left 1/3 | Previous slide |
+| Click right 2/3 | Next slide |
 
 ## Browser Support
 
@@ -259,9 +374,17 @@ MIT License
 
 ## Changelog
 
-### v0.4.1 (Current)
+### v0.5 (Current)
 - Fixed font selector dropdown not working
 - Improved font selection UI/PDL synchronization
+- Added fullscreen presentation mode
+- Click navigation in slideshow (left 1/3 = prev, right 2/3 = next)
+- Press F key for fullscreen toggle
+- Laser pointer for presentations (L key or button)
+- Drag & drop slide reordering in outline
+- Video embedding (YouTube, Vimeo, local files)
+- Percentage size specification for video, figure, shapes, table columns
+- 13 new templates: image, steps, cards, twocolumn, threecolumn, blank, bigtext, mindmap, video, table, code, flowchart
 
 ### v0.4
 - Table column alignment (left/center/right)

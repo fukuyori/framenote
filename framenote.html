@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrameNote v0.4.1 - Text-First Slide Tool</title>
+  <title>FrameNote v0.5 - Text-First Slide Tool</title>
   <!-- Load all libraries BEFORE Monaco's AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -229,6 +229,38 @@
 
     .outline-item.has-error {
       color: var(--error);
+    }
+
+    .outline-item.dragging {
+      opacity: 0.5;
+      background: var(--bg-surface);
+    }
+
+    .outline-item.drag-over {
+      border-top: 2px solid var(--accent);
+      margin-top: -2px;
+    }
+
+    .outline-item.drag-over-bottom {
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 0;
+    }
+
+    .outline-item .drag-handle {
+      cursor: grab;
+      color: var(--text-muted);
+      font-size: 10px;
+      padding: 2px;
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
+    .outline-item:hover .drag-handle {
+      opacity: 1;
+    }
+
+    .outline-item .drag-handle:active {
+      cursor: grabbing;
     }
 
     .outline-number {
@@ -609,11 +641,34 @@
       background: #2d2d2d;
     }
 
+    .slideshow-btn.active {
+      background: #dc2626;
+      border-color: #dc2626;
+    }
+
     .slideshow-page {
       font-size: 14px;
       color: #999;
       min-width: 80px;
       text-align: center;
+    }
+
+    /* Laser pointer */
+    .laser-pointer {
+      position: fixed;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff0000 0%, #ff0000 40%, transparent 70%);
+      box-shadow: 0 0 20px 8px rgba(255, 0, 0, 0.6), 0 0 40px 16px rgba(255, 0, 0, 0.3);
+      pointer-events: none;
+      z-index: 10001;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+
+    .laser-pointer.active {
+      display: block;
     }
 
     /* Notification */
@@ -675,7 +730,7 @@
   <header class="header">
     <div class="logo">
       <div class="logo-icon">F</div>
-      <h1>FrameNote <span class="logo-version">v0.4.1</span></h1>
+      <h1>FrameNote <span class="logo-version">v0.5</span></h1>
     </div>
     <div class="header-actions">
       <div class="theme-selector">
@@ -774,9 +829,11 @@
       <button class="slideshow-btn" onclick="prevSlideshowSlide()">◀ Prev</button>
       <span class="slideshow-page" id="slideshow-page">1 / 1</span>
       <button class="slideshow-btn" onclick="nextSlideshowSlide()">Next ▶</button>
+      <button class="slideshow-btn" onclick="toggleLaser()" id="laser-btn">🔴 Laser</button>
       <button class="slideshow-btn" onclick="toggleFullscreen()" id="fullscreen-btn">⛶ Fullscreen</button>
       <button class="slideshow-btn" onclick="endSlideshow()">✕ Exit</button>
     </div>
+    <div class="laser-pointer" id="laser-pointer"></div>
   </div>
 
   <input type="file" id="file-input" accept=".fnote,.yaml,.yml" style="display:none">
@@ -903,6 +960,7 @@
     let parsedData = null;
     let uploadedImages = new Map();
     let slideshowSlide = 0;
+    let laserEnabled = false;
     let currentTheme = 'default';
     let currentFont = 'sans';
     let themeChangedByUI = false;  // フラグ: UIセレクターからの変更か
@@ -1104,7 +1162,7 @@
 
       // Completion provider - Context-aware snippets + keywords
       monaco.languages.registerCompletionItemProvider('pdl', {
-        triggerCharacters: [' ', '\n'],
+        triggerCharacters: [],  // Empty to respect quickSuggestionsDelay
         provideCompletionItems: function(model, position) {
           const word = model.getWordUntilPosition(position);
           const range = {
@@ -1175,34 +1233,29 @@
               detail: 'Slide with diagram'
             },
             {
-              label: '🎬 template: title',
-              insertText: 'template: title\n  title: "${1:Presentation Title}"\n  subtitle: "${2:Subtitle}"\n  author: "${3:Author}"\n  date: "${4:2025}"',
-              detail: 'Title slide'
-            },
-            {
-              label: '📑 template: section',
-              insertText: 'template: section\n  title: "${1:Section Title}"\n  subtitle: "${2:Subtitle}"',
-              detail: 'Section divider'
-            },
-            {
-              label: '💬 template: quote',
-              insertText: 'template: quote\n  quote: "${1:Quote text}"\n  author: "${2:Author}"\n  source: "${3:Source}"',
-              detail: 'Quote slide'
-            },
-            {
-              label: '❓ template: qa',
-              insertText: 'template: qa\n  title: "${1:Questions?}"\n  contact: "${2:email@example.com}"',
-              detail: 'Q&A slide'
-            },
-            {
-              label: '🙏 template: thanks',
-              insertText: 'template: thanks\n  title: "${1:Thank You!}"\n  message: "${2:Message}"\n  contact: "${3:URL}"',
-              detail: 'Thanks slide'
-            },
-            {
               label: '📋 template: agenda',
               insertText: 'template: agenda\n  title: "${1:Agenda}"\n  items:\n    - "${2:Item 1}"\n    - "${3:Item 2}"\n    - "${4:Item 3}"',
               detail: 'Agenda slide'
+            },
+            {
+              label: '💥 template: bigtext',
+              insertText: 'template: bigtext\n  text: "${1:BIG IDEA}"\n  subtitle: "${2:Supporting message}"\n  fontSize: ${3:120}',
+              detail: 'Large impact text'
+            },
+            {
+              label: '📝 template: blank',
+              insertText: 'template: blank\n  body:\n    shapes:\n      - type: ${1:rect}\n        x: "${2:10%}"\n        y: "${3:20%}"\n        width: "${4:30%}"\n        height: "${5:40%}"\n        fill: "${6:#6366f1}"',
+              detail: 'Blank slide for custom content'
+            },
+            {
+              label: '🃏 template: cards',
+              insertText: 'template: cards\n  title: "${1:Features}"\n  columns: 3\n  cards:\n    - title: "${2:Card 1}"\n      description: "${3:Description}"\n      icon: "🚀"\n    - title: "${4:Card 2}"\n      description: "${5:Description}"\n      icon: "⚡"\n    - title: "${6:Card 3}"\n      description: "${7:Description}"\n      icon: "🎯"',
+              detail: 'Card grid slide'
+            },
+            {
+              label: '💻 template: code',
+              insertText: 'template: code\n  title: "${1:Code Example}"\n  code:\n    language: ${2:javascript}\n    content: |\n      ${3:// Your code here}\n      console.log("Hello");',
+              detail: 'Code block slide'
             },
             {
               label: '⚖️ template: comparison',
@@ -1210,9 +1263,74 @@
               detail: 'Comparison slide'
             },
             {
+              label: '📈 template: flowchart',
+              insertText: 'template: flowchart\n  title: "${1:Process Flow}"\n  flowchart:\n    content: |\n      ${2:Start} --> ${3:Process}\n      ${3:Process} --> ${4:End}',
+              detail: 'Flowchart slide'
+            },
+            {
+              label: '🖼️ template: image',
+              insertText: 'template: image\n  image: "${1:image.png}"\n  caption: "${2:Image caption}"',
+              detail: 'Full image slide'
+            },
+            {
+              label: '🧠 template: mindmap',
+              insertText: 'template: mindmap\n  title: "${1:Mind Map}"\n  mindmap:\n    center: "${2:Main Topic}"\n    layout: radial\n    branches:\n      - topic: "${3:Branch 1}"\n        items:\n          - "${4:Item 1}"\n          - "${5:Item 2}"\n      - topic: "${6:Branch 2}"\n        items:\n          - "${7:Item 1}"\n          - "${8:Item 2}"',
+              detail: 'Mind map diagram'
+            },
+            {
+              label: '❓ template: qa',
+              insertText: 'template: qa\n  title: "${1:Questions?}"\n  contact: "${2:email@example.com}"',
+              detail: 'Q&A slide'
+            },
+            {
+              label: '💬 template: quote',
+              insertText: 'template: quote\n  quote: "${1:Quote text}"\n  author: "${2:Author}"\n  source: "${3:Source}"',
+              detail: 'Quote slide'
+            },
+            {
+              label: '📑 template: section',
+              insertText: 'template: section\n  title: "${1:Section Title}"\n  subtitle: "${2:Subtitle}"',
+              detail: 'Section divider'
+            },
+            {
+              label: '👣 template: steps',
+              insertText: 'template: steps\n  title: "${1:Process}"\n  steps:\n    - title: "${2:Step 1}"\n      description: "${3:Description}"\n    - title: "${4:Step 2}"\n      description: "${5:Description}"\n    - title: "${6:Step 3}"\n      description: "${7:Description}"',
+              detail: 'Steps/process flow'
+            },
+            {
+              label: '📊 template: table',
+              insertText: 'template: table\n  title: "${1:Table Title}"\n  table: |\n    | ${2:Header 1} | ${3:Header 2} | ${4:Header 3} |\n    |:------------|:------------:|-------------:|\n    | ${5:Left} | ${6:Center} | ${7:Right} |\n  tableStyle:\n    rowHeight: 52',
+              detail: 'Table slide'
+            },
+            {
+              label: '🙏 template: thanks',
+              insertText: 'template: thanks\n  title: "${1:Thank You!}"\n  message: "${2:Message}"\n  contact: "${3:URL}"',
+              detail: 'Thanks slide'
+            },
+            {
+              label: '📊 template: threecolumn',
+              insertText: 'template: threecolumn\n  title: "${1:Title}"\n  col1:\n    title: "${2:Column 1}"\n    text:\n      - "${3:Item}"\n  col2:\n    title: "${4:Column 2}"\n    text:\n      - "${5:Item}"\n  col3:\n    title: "${6:Column 3}"\n    text:\n      - "${7:Item}"',
+              detail: 'Three column layout'
+            },
+            {
               label: '📅 template: timeline',
               insertText: 'template: timeline\n  title: "${1:Timeline}"\n  events:\n    - date: "${2:Q1}"\n      title: "${3:Phase 1}"\n    - date: "${4:Q2}"\n      title: "${5:Phase 2}"',
               detail: 'Timeline slide'
+            },
+            {
+              label: '🎬 template: title',
+              insertText: 'template: title\n  title: "${1:Presentation Title}"\n  subtitle: "${2:Subtitle}"\n  author: "${3:Author}"\n  date: "${4:2025}"',
+              detail: 'Title slide'
+            },
+            {
+              label: '📊 template: twocolumn',
+              insertText: 'template: twocolumn\n  title: "${1:Title}"\n  left:\n    title: "${2:Left}"\n    text:\n      - "${3:Item 1}"\n      - "${4:Item 2}"\n  right:\n    title: "${5:Right}"\n    text:\n      - "${6:Item 1}"\n      - "${7:Item 2}"',
+              detail: 'Two column layout'
+            },
+            {
+              label: '🎬 template: video',
+              insertText: 'template: video\n  title: "${1:Video Title}"\n  video:\n    url: "${2:https://www.youtube.com/watch?v=VIDEO_ID}"\n    width: "80%"\n    height: "50%"',
+              detail: 'Video slide'
             },
           ];
           
@@ -1291,6 +1409,13 @@
             label: '🔄 sequence',
             insertText: 'sequence: |\n      ${1:Client} ->> ${2:Server}: ${3:Request}\n      ${2:Server} -->> ${1:Client}: ${4:Response}',
             detail: 'Sequence diagram'
+          };
+          
+          // Video snippet
+          const videoSnippet = {
+            label: '🎬 video',
+            insertText: 'video:\n      url: "${1:https://www.youtube.com/watch?v=VIDEO_ID}"\n      width: ${2:960}\n      height: ${3:540}\n      controls: true',
+            detail: 'Video embed (YouTube/Vimeo)'
           };
           
           // Add snippets based on context
@@ -1398,6 +1523,15 @@
               sortText: '0',
               range: range
             });
+            suggestions.push({
+              label: videoSnippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: videoSnippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: videoSnippet.detail,
+              sortText: '0',
+              range: range
+            });
           }
           
           // Keywords with colon (YAML keys) - always available
@@ -1422,6 +1556,7 @@
             { label: 'text:', detail: 'Text array' },
             { label: 'style:', detail: 'Layout style' },
             { label: 'figure:', detail: 'Image filename' },
+            { label: 'figureStyle:', detail: 'Figure size and position' },
             { label: 'caption:', detail: 'Figure caption' },
             { label: 'diagram:', detail: 'Diagram block' },
             { label: 'table:', detail: 'Markdown table' },
@@ -1441,6 +1576,10 @@
             { label: 'shapes:', detail: 'SVG shapes array' },
             { label: 'flowchart:', detail: 'Mermaid-style flowchart' },
             { label: 'sequence:', detail: 'Sequence diagram' },
+            { label: 'video:', detail: 'Video embed' },
+            { label: 'url:', detail: 'Video URL (YouTube/Vimeo)' },
+            { label: 'autoplay:', detail: 'Auto-play video' },
+            { label: 'controls:', detail: 'Show video controls' },
             { label: 'content:', detail: 'Chart content' },
             { label: 'chart:', detail: 'Chart content (alias)' },
             { label: 'nodeWidth:', detail: 'Flowchart node width' },
@@ -1607,8 +1746,13 @@
         tabSize: 2,
         wordWrap: 'on',
         renderWhitespace: 'selection',
-        quickSuggestions: true,
-        suggestOnTriggerCharacters: true,
+        quickSuggestions: {
+          other: 'on',
+          comments: 'off',
+          strings: 'on'
+        },
+        quickSuggestionsDelay: 1000,
+        suggestOnTriggerCharacters: false,
         acceptSuggestionOnEnter: 'on',
         tabCompletion: 'onlySnippets',
         snippetSuggestions: 'top',
@@ -1726,6 +1870,9 @@
         
         if (!parsedData || !parsedData.slides || !Array.isArray(parsedData.slides)) {
           errors.push({ type: 'error', message: 'Invalid structure: slides array required' });
+        } else {
+          // Filter out null/undefined slides
+          parsedData.slides = parsedData.slides.filter(s => s !== null && s !== undefined);
         }
         
         // Sync theme selector with meta.theme (only if not changed by UI)
@@ -1780,24 +1927,150 @@
       if (!parsedData || !parsedData.slides) return;
 
       parsedData.slides.forEach((slide, index) => {
+        // Skip null or undefined slides
+        if (!slide) return;
+        
         const item = document.createElement('div');
         item.className = 'outline-item' + (index === currentSlide ? ' active' : '');
+        item.draggable = true;
+        item.dataset.index = index;
         
         const template = slide.template || '';
         const title = slide.title || slide.quote?.substring(0, 20) + '...' || `Slide ${index + 1}`;
         
         item.innerHTML = `
+          <span class="drag-handle">≡</span>
           <span class="outline-number">${index + 1}</span>
           <span>${escapeHtml(title.substring(0, 25))}</span>
           ${template ? `<span class="outline-template">${template}</span>` : ''}
         `;
-        item.addEventListener('click', () => {
+        
+        // Click to select
+        item.addEventListener('click', (e) => {
+          if (e.target.classList.contains('drag-handle')) return;
           currentSlide = index;
           renderOutline();
           renderSlide();
         });
+        
+        // Drag events
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('dragleave', handleDragLeave);
+        item.addEventListener('drop', handleDrop);
+        
         list.appendChild(item);
       });
+    }
+
+    // Drag and drop handlers
+    let draggedIndex = null;
+
+    function handleDragStart(e) {
+      draggedIndex = parseInt(e.currentTarget.dataset.index);
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedIndex);
+    }
+
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.outline-item').forEach(item => {
+        item.classList.remove('drag-over', 'drag-over-bottom');
+      });
+      draggedIndex = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const targetIndex = parseInt(e.currentTarget.dataset.index);
+      if (targetIndex === draggedIndex) return;
+      
+      // Clear all indicators
+      document.querySelectorAll('.outline-item').forEach(item => {
+        item.classList.remove('drag-over', 'drag-over-bottom');
+      });
+      
+      // Show indicator
+      const rect = e.currentTarget.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      
+      if (e.clientY < midY) {
+        e.currentTarget.classList.add('drag-over');
+      } else {
+        e.currentTarget.classList.add('drag-over-bottom');
+      }
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over', 'drag-over-bottom');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      
+      const targetIndex = parseInt(e.currentTarget.dataset.index);
+      if (draggedIndex === null || targetIndex === draggedIndex) return;
+      
+      // Determine insert position
+      const rect = e.currentTarget.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      let insertIndex = e.clientY < midY ? targetIndex : targetIndex + 1;
+      
+      // Adjust if dragging down
+      if (draggedIndex < insertIndex) {
+        insertIndex--;
+      }
+      
+      if (insertIndex !== draggedIndex) {
+        reorderSlides(draggedIndex, insertIndex);
+      }
+      
+      // Clear indicators
+      document.querySelectorAll('.outline-item').forEach(item => {
+        item.classList.remove('drag-over', 'drag-over-bottom');
+      });
+    }
+
+    function reorderSlides(fromIndex, toIndex) {
+      // Get current YAML content
+      const content = monacoEditor.getValue();
+      
+      try {
+        const data = jsyaml.load(content);
+        if (!data || !data.slides || data.slides.length <= 1) return;
+        
+        // Reorder slides array
+        const [movedSlide] = data.slides.splice(fromIndex, 1);
+        data.slides.splice(toIndex, 0, movedSlide);
+        
+        // Convert back to YAML
+        const newContent = jsyaml.dump(data, {
+          indent: 2,
+          lineWidth: -1,
+          quotingType: '"',
+          forceQuotes: false
+        });
+        
+        // Update editor
+        monacoEditor.setValue(newContent);
+        
+        // Update current slide if needed
+        if (currentSlide === fromIndex) {
+          currentSlide = toIndex;
+        } else if (fromIndex < currentSlide && toIndex >= currentSlide) {
+          currentSlide--;
+        } else if (fromIndex > currentSlide && toIndex <= currentSlide) {
+          currentSlide++;
+        }
+        
+        showNotification(`Slide moved to position ${toIndex + 1}`, 'success');
+      } catch (e) {
+        showNotification('Failed to reorder slides', 'error');
+      }
     }
 
     function renderSlide() {
@@ -1815,6 +2088,10 @@
       pageInfo.textContent = `${currentSlide + 1} / ${total}`;
 
       const slide = parsedData.slides[currentSlide];
+      if (!slide) {
+        frame.innerHTML = '<svg viewBox="0 0 1920 1080"><rect fill="#ffffff" width="1920" height="1080"/><text x="960" y="540" text-anchor="middle" fill="#999" font-size="48">Empty slide</text></svg>';
+        return;
+      }
       const meta = parsedData.meta || {};
       const globalFormat = meta.format || {};
       const slideFormat = slide.format || {};
@@ -1908,6 +2185,30 @@
           return renderComparisonTemplate(slide, colors, W, H);
         case 'timeline':
           return renderTimelineTemplate(slide, colors, W, H);
+        case 'image':
+          return renderImageTemplate(slide, colors, W, H);
+        case 'steps':
+          return renderStepsTemplate(slide, colors, W, H);
+        case 'cards':
+          return renderCardsTemplate(slide, colors, W, H);
+        case 'twocolumn':
+          return renderTwoColumnTemplate(slide, colors, W, H);
+        case 'threecolumn':
+          return renderThreeColumnTemplate(slide, colors, W, H);
+        case 'blank':
+          return renderBlankTemplate(slide, colors, W, H);
+        case 'bigtext':
+          return renderBigTextTemplate(slide, colors, W, H);
+        case 'mindmap':
+          return renderMindmapTemplate(slide, colors, W, H);
+        case 'video':
+          return renderVideoTemplate(slide, colors, W, H);
+        case 'table':
+          return renderTableTemplate(slide, colors, W, H);
+        case 'code':
+          return renderCodeTemplate(slide, colors, W, H);
+        case 'flowchart':
+          return renderFlowchartTemplate(slide, colors, W, H);
         default:
           return renderStandardSlide(slide, meta, colors, W, H, pageNum, totalPages);
       }
@@ -2144,6 +2445,518 @@
       return svg;
     }
 
+    // Image Template - Full screen image with caption
+    function renderImageTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      if (slide.image) {
+        const imgSrc = getImageSrc(slide.image);
+        const imgStyle = slide.imageStyle || {};
+        const imgW = parseSize(imgStyle.width, W) || W - 200;
+        const imgH = parseSize(imgStyle.height, H) || H - 250;
+        const imgX = (W - imgW) / 2;
+        const imgY = 80;
+        
+        svg += `<image href="${imgSrc}" x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}" preserveAspectRatio="xMidYMid meet"/>`;
+      }
+      
+      // Caption
+      if (slide.caption) {
+        svg += `<text x="${W/2}" y="${H - 80}" text-anchor="middle" font-size="28" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.caption)}</text>`;
+      }
+      
+      // Title (optional, at top)
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="50" text-anchor="middle" font-size="36" font-weight="600" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      return svg;
+    }
+
+    // Steps Template - Process flow 1 → 2 → 3
+    function renderStepsTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const steps = slide.steps || [];
+      if (steps.length === 0) return svg;
+      
+      const stepCount = steps.length;
+      const stepW = 280;
+      const stepH = 180;
+      const totalW = stepCount * stepW + (stepCount - 1) * 100;
+      const startX = (W - totalW) / 2;
+      const y = H/2 - stepH/2 + 30;
+      
+      steps.forEach((step, i) => {
+        const x = startX + i * (stepW + 100);
+        
+        // Step box
+        svg += `<rect x="${x}" y="${y}" width="${stepW}" height="${stepH}" rx="12" fill="${colors.accent}" opacity="0.1"/>`;
+        svg += `<rect x="${x}" y="${y}" width="${stepW}" height="${stepH}" rx="12" fill="none" stroke="${colors.accent}" stroke-width="2"/>`;
+        
+        // Step number
+        svg += `<circle cx="${x + stepW/2}" cy="${y - 25}" r="28" fill="${colors.accent}"/>`;
+        svg += `<text x="${x + stepW/2}" y="${y - 16}" text-anchor="middle" font-size="24" font-weight="700" fill="${colors.background}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${i + 1}</text>`;
+        
+        // Step title
+        svg += `<text x="${x + stepW/2}" y="${y + 60}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(step.title || '')}</text>`;
+        
+        // Step description
+        if (step.description) {
+          const descLines = wrapText(step.description, 20);
+          let dy = y + 100;
+          descLines.slice(0, 3).forEach(line => {
+            svg += `<text x="${x + stepW/2}" y="${dy}" text-anchor="middle" font-size="18" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(line)}</text>`;
+            dy += 26;
+          });
+        }
+        
+        // Arrow to next step
+        if (i < stepCount - 1) {
+          const arrowX = x + stepW + 20;
+          svg += `<path d="M ${arrowX} ${y + stepH/2} l 60 0 l -15 -12 m 15 12 l -15 12" fill="none" stroke="${colors.accent}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+      });
+      
+      return svg;
+    }
+
+    // Cards Template - Grid of cards
+    function renderCardsTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const cards = slide.cards || [];
+      if (cards.length === 0) return svg;
+      
+      const cols = slide.columns || Math.min(cards.length, 4);
+      const rows = Math.ceil(cards.length / cols);
+      const cardW = 380;
+      const cardH = rows === 1 ? 500 : 320;
+      const gapX = 40;
+      const gapY = 40;
+      const totalW = cols * cardW + (cols - 1) * gapX;
+      const totalH = rows * cardH + (rows - 1) * gapY;
+      const startX = (W - totalW) / 2;
+      const startY = (H - totalH) / 2 + 40;
+      
+      cards.forEach((card, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = startX + col * (cardW + gapX);
+        const y = startY + row * (cardH + gapY);
+        
+        // Card background
+        svg += `<rect x="${x}" y="${y}" width="${cardW}" height="${cardH}" rx="12" fill="${colors.background}" stroke="${colors.muted}" stroke-width="1" opacity="0.5"/>`;
+        svg += `<rect x="${x}" y="${y}" width="${cardW}" height="8" rx="4" fill="${colors.accent}"/>`;
+        
+        // Icon or number
+        if (card.icon) {
+          svg += `<text x="${x + cardW/2}" y="${y + 70}" text-anchor="middle" font-size="48">${card.icon}</text>`;
+        } else {
+          svg += `<circle cx="${x + cardW/2}" cy="${y + 55}" r="28" fill="${colors.accent}" opacity="0.15"/>`;
+          svg += `<text x="${x + cardW/2}" y="${y + 64}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${i + 1}</text>`;
+        }
+        
+        // Card title
+        svg += `<text x="${x + cardW/2}" y="${y + 130}" text-anchor="middle" font-size="24" font-weight="600" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(card.title || '')}</text>`;
+        
+        // Card description
+        if (card.description) {
+          const descLines = wrapText(card.description, 28);
+          let dy = y + 170;
+          descLines.slice(0, 5).forEach(line => {
+            svg += `<text x="${x + cardW/2}" y="${dy}" text-anchor="middle" font-size="18" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(line)}</text>`;
+            dy += 28;
+          });
+        }
+      });
+      
+      return svg;
+    }
+
+    // Two Column Template
+    function renderTwoColumnTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const colW = (W - 300) / 2;
+      const leftX = 120;
+      const rightX = W/2 + 30;
+      const startY = 180;
+      
+      // Left column
+      if (slide.left) {
+        svg += renderColumnContent(slide.left, leftX, startY, colW, colors);
+      }
+      
+      // Divider
+      svg += `<line x1="${W/2}" y1="160" x2="${W/2}" y2="${H - 80}" stroke="${colors.muted}" stroke-width="2" opacity="0.2"/>`;
+      
+      // Right column
+      if (slide.right) {
+        svg += renderColumnContent(slide.right, rightX, startY, colW, colors);
+      }
+      
+      return svg;
+    }
+
+    // Three Column Template
+    function renderThreeColumnTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const colW = (W - 360) / 3;
+      const gap = 60;
+      const startY = 180;
+      
+      const columns = [slide.col1, slide.col2, slide.col3];
+      
+      columns.forEach((col, i) => {
+        if (col) {
+          const x = 120 + i * (colW + gap);
+          svg += renderColumnContent(col, x, startY, colW, colors);
+          
+          // Divider (except after last)
+          if (i < 2) {
+            const divX = x + colW + gap/2;
+            svg += `<line x1="${divX}" y1="160" x2="${divX}" y2="${H - 80}" stroke="${colors.muted}" stroke-width="2" opacity="0.2"/>`;
+          }
+        }
+      });
+      
+      return svg;
+    }
+
+    // Helper function for column content
+    function renderColumnContent(col, x, startY, colW, colors) {
+      let svg = '';
+      let y = startY;
+      
+      // Column title
+      if (col.title) {
+        svg += `<text x="${x}" y="${y}" font-size="32" font-weight="600" fill="${colors.accent}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(col.title)}</text>`;
+        y += 50;
+      }
+      
+      // Column image
+      if (col.image) {
+        const imgSrc = getImageSrc(col.image);
+        const imgH = 200;
+        svg += `<image href="${imgSrc}" x="${x}" y="${y}" width="${colW - 20}" height="${imgH}" preserveAspectRatio="xMidYMid meet"/>`;
+        y += imgH + 20;
+      }
+      
+      // Column text (bullets)
+      if (col.text && Array.isArray(col.text)) {
+        col.text.forEach(item => {
+          svg += `<circle cx="${x + 12}" cy="${y - 8}" r="5" fill="${colors.bullet}"/>`;
+          
+          const lines = wrapText(item, Math.floor(colW / 14));
+          lines.forEach((line, li) => {
+            svg += `<text x="${x + 30}" y="${y}" font-size="22" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(line)}</text>`;
+            y += li === 0 ? 36 : 28;
+          });
+          y += 10;
+        });
+      }
+      
+      // Column paragraph
+      if (col.paragraph) {
+        const lines = wrapText(col.paragraph, Math.floor(colW / 12));
+        lines.forEach(line => {
+          svg += `<text x="${x}" y="${y}" font-size="20" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(line)}</text>`;
+          y += 30;
+        });
+      }
+      
+      return svg;
+    }
+
+    // Blank Template - Empty slide for shapes/custom content
+    function renderBlankTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Only render body content if present (shapes, images, etc.)
+      if (slide.body) {
+        svg += renderBody(slide.body, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    // Big Text Template - Large impact text
+    function renderBigTextTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      const text = slide.text || slide.title || '';
+      const fontSize = slide.fontSize || 120;
+      const textColor = slide.color || colors.title;
+      
+      // Main big text
+      svg += `<text x="${W/2}" y="${H/2 + fontSize/3}" text-anchor="middle" font-size="${fontSize}" font-weight="800" fill="${textColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(text)}</text>`;
+      
+      // Subtitle
+      if (slide.subtitle) {
+        svg += `<text x="${W/2}" y="${H/2 + fontSize/3 + 80}" text-anchor="middle" font-size="36" fill="${colors.muted}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.subtitle)}</text>`;
+      }
+      
+      // Accent decoration
+      const accentW = Math.min(text.length * fontSize * 0.5, W - 400);
+      svg += `<rect x="${(W - accentW)/2}" y="${H/2 - fontSize/2 - 40}" width="${accentW}" height="6" rx="3" fill="${colors.accent}" opacity="0.3"/>`;
+      
+      return svg;
+    }
+
+    // Mindmap Template
+    function renderMindmapTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="80" text-anchor="middle" font-size="42" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      const mindmap = slide.mindmap || {};
+      const center = mindmap.center || 'Main Topic';
+      const branches = mindmap.branches || [];
+      const layout = mindmap.layout || 'radial';
+      
+      const centerX = W / 2;
+      const centerY = H / 2 + 30;
+      
+      // Branch colors
+      const branchColors = [
+        colors.accent,
+        '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
+      ];
+      
+      if (layout === 'radial') {
+        // Radial layout
+        const branchCount = branches.length;
+        const radius1 = 220;  // Distance to first level
+        const radius2 = 420;  // Distance to second level
+        
+        // Draw branches
+        branches.forEach((branch, i) => {
+          const angle = (i / branchCount) * 2 * Math.PI - Math.PI / 2;
+          const branchColor = branchColors[i % branchColors.length];
+          
+          // Branch node position
+          const bx = centerX + radius1 * Math.cos(angle);
+          const by = centerY + radius1 * Math.sin(angle);
+          
+          // Connection line (curved)
+          const ctrl1x = centerX + 80 * Math.cos(angle);
+          const ctrl1y = centerY + 80 * Math.sin(angle);
+          svg += `<path d="M ${centerX} ${centerY} Q ${ctrl1x} ${ctrl1y} ${bx} ${by}" fill="none" stroke="${branchColor}" stroke-width="4" opacity="0.6"/>`;
+          
+          // Branch node
+          const topicW = Math.max(120, (branch.topic || '').length * 14 + 40);
+          svg += `<rect x="${bx - topicW/2}" y="${by - 25}" width="${topicW}" height="50" rx="25" fill="${branchColor}"/>`;
+          svg += `<text x="${bx}" y="${by + 8}" text-anchor="middle" font-size="18" font-weight="600" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(branch.topic || '')}</text>`;
+          
+          // Sub-items
+          const items = branch.items || [];
+          items.forEach((item, j) => {
+            const subAngle = angle + (j - (items.length - 1) / 2) * 0.3;
+            const ix = centerX + radius2 * Math.cos(subAngle);
+            const iy = centerY + radius2 * Math.sin(subAngle);
+            
+            // Sub connection
+            svg += `<path d="M ${bx} ${by} Q ${(bx + ix)/2} ${(by + iy)/2 + 20} ${ix} ${iy}" fill="none" stroke="${branchColor}" stroke-width="2" opacity="0.4"/>`;
+            
+            // Sub item
+            const itemW = Math.max(100, item.length * 12 + 30);
+            svg += `<rect x="${ix - itemW/2}" y="${iy - 18}" width="${itemW}" height="36" rx="18" fill="${branchColor}" opacity="0.15" stroke="${branchColor}" stroke-width="1.5"/>`;
+            svg += `<text x="${ix}" y="${iy + 6}" text-anchor="middle" font-size="16" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
+          });
+        });
+        
+        // Center node (drawn last to be on top)
+        const centerW = Math.max(180, center.length * 18 + 60);
+        svg += `<ellipse cx="${centerX}" cy="${centerY}" rx="${centerW/2}" ry="45" fill="${colors.accent}"/>`;
+        svg += `<text x="${centerX}" y="${centerY + 10}" text-anchor="middle" font-size="26" font-weight="700" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(center)}</text>`;
+        
+      } else if (layout === 'tree' || layout === 'tree-right') {
+        // Tree layout (left to right)
+        const startX = 150;
+        const levelGap = 300;
+        const branchGap = Math.min(180, (H - 200) / Math.max(branches.length, 1));
+        const startY = (H - branchGap * (branches.length - 1)) / 2;
+        
+        // Center node on left
+        const centerW = Math.max(160, center.length * 16 + 50);
+        svg += `<rect x="${startX}" y="${centerY - 35}" width="${centerW}" height="70" rx="35" fill="${colors.accent}"/>`;
+        svg += `<text x="${startX + centerW/2}" y="${centerY + 10}" text-anchor="middle" font-size="22" font-weight="700" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(center)}</text>`;
+        
+        // Draw branches
+        branches.forEach((branch, i) => {
+          const branchColor = branchColors[i % branchColors.length];
+          const by = startY + i * branchGap;
+          const bx = startX + levelGap;
+          
+          // Connection
+          svg += `<path d="M ${startX + centerW} ${centerY} C ${startX + centerW + 50} ${centerY} ${bx - 50} ${by} ${bx} ${by}" fill="none" stroke="${branchColor}" stroke-width="3" opacity="0.5"/>`;
+          
+          // Branch node
+          const topicW = Math.max(120, (branch.topic || '').length * 13 + 40);
+          svg += `<rect x="${bx}" y="${by - 22}" width="${topicW}" height="44" rx="22" fill="${branchColor}"/>`;
+          svg += `<text x="${bx + topicW/2}" y="${by + 7}" text-anchor="middle" font-size="17" font-weight="600" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(branch.topic || '')}</text>`;
+          
+          // Sub-items
+          const items = branch.items || [];
+          const itemGap = 45;
+          const itemStartY = by - (items.length - 1) * itemGap / 2;
+          
+          items.forEach((item, j) => {
+            const ix = bx + levelGap - 50;
+            const iy = itemStartY + j * itemGap;
+            
+            // Sub connection
+            svg += `<path d="M ${bx + topicW} ${by} C ${bx + topicW + 30} ${by} ${ix - 30} ${iy} ${ix} ${iy}" fill="none" stroke="${branchColor}" stroke-width="2" opacity="0.4"/>`;
+            
+            // Sub item
+            const itemW = Math.max(100, item.length * 11 + 25);
+            svg += `<rect x="${ix}" y="${iy - 16}" width="${itemW}" height="32" rx="16" fill="${branchColor}" opacity="0.15" stroke="${branchColor}" stroke-width="1.5"/>`;
+            svg += `<text x="${ix + itemW/2}" y="${iy + 5}" text-anchor="middle" font-size="14" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
+          });
+        });
+        
+      } else if (layout === 'tree-down') {
+        // Tree layout (top to bottom)
+        const levelGap = 180;
+        const branchGap = Math.min(280, (W - 300) / Math.max(branches.length, 1));
+        const startX = (W - branchGap * (branches.length - 1)) / 2;
+        const startY = 180;
+        
+        // Center node on top
+        const centerW = Math.max(180, center.length * 18 + 60);
+        svg += `<rect x="${centerX - centerW/2}" y="${startY - 30}" width="${centerW}" height="60" rx="30" fill="${colors.accent}"/>`;
+        svg += `<text x="${centerX}" y="${startY + 10}" text-anchor="middle" font-size="24" font-weight="700" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(center)}</text>`;
+        
+        // Draw branches
+        branches.forEach((branch, i) => {
+          const branchColor = branchColors[i % branchColors.length];
+          const bx = startX + i * branchGap;
+          const by = startY + levelGap;
+          
+          // Connection
+          svg += `<path d="M ${centerX} ${startY + 30} C ${centerX} ${startY + 60} ${bx} ${by - 40} ${bx} ${by - 22}" fill="none" stroke="${branchColor}" stroke-width="3" opacity="0.5"/>`;
+          
+          // Branch node
+          const topicW = Math.max(120, (branch.topic || '').length * 13 + 40);
+          svg += `<rect x="${bx - topicW/2}" y="${by - 22}" width="${topicW}" height="44" rx="22" fill="${branchColor}"/>`;
+          svg += `<text x="${bx}" y="${by + 7}" text-anchor="middle" font-size="17" font-weight="600" fill="white" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(branch.topic || '')}</text>`;
+          
+          // Sub-items
+          const items = branch.items || [];
+          items.forEach((item, j) => {
+            const iy = by + 70 + j * 50;
+            
+            // Sub connection
+            svg += `<line x1="${bx}" y1="${by + 22}" x2="${bx}" y2="${iy - 16}" stroke="${branchColor}" stroke-width="2" opacity="0.4"/>`;
+            
+            // Sub item
+            const itemW = Math.max(100, item.length * 11 + 25);
+            svg += `<rect x="${bx - itemW/2}" y="${iy - 16}" width="${itemW}" height="32" rx="16" fill="${branchColor}" opacity="0.15" stroke="${branchColor}" stroke-width="1.5"/>`;
+            svg += `<text x="${bx}" y="${iy + 5}" text-anchor="middle" font-size="14" fill="${colors.text}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(item)}</text>`;
+          });
+        });
+      }
+      
+      return svg;
+    }
+
+    // Video Template
+    function renderVideoTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      // Video
+      if (slide.video) {
+        const videoConfig = typeof slide.video === 'string' ? { url: slide.video } : slide.video;
+        svg += renderVideo(videoConfig, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    // Table Template
+    function renderTableTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      // Table
+      if (slide.table) {
+        svg += renderTable(slide.table, slide.tableStyle || {}, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    // Code Template
+    function renderCodeTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      // Code block
+      if (slide.code) {
+        const codeConfig = typeof slide.code === 'string' 
+          ? { content: slide.code, language: slide.language || 'javascript' }
+          : slide.code;
+        svg += renderCodeBlock(codeConfig, colors, W, H);
+      }
+      
+      return svg;
+    }
+
+    // Flowchart Template
+    function renderFlowchartTemplate(slide, colors, W, H) {
+      let svg = '';
+      
+      // Title
+      if (slide.title) {
+        svg += `<text x="${W/2}" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="${colors.title}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(slide.title)}</text>`;
+      }
+      
+      // Flowchart
+      if (slide.flowchart) {
+        svg += renderFlowchart(slide.flowchart, colors, W, H);
+      }
+      
+      return svg;
+    }
+
     // Standard slide rendering
     function renderStandardSlide(slide, meta, colors, W, H, pageNum, totalPages) {
       let svg = '';
@@ -2196,6 +3009,11 @@
       // Math (LaTeX/KaTeX)
       if (body.math) {
         svg += renderMath(body.math, body.mathStyle, colors, W, H);
+      }
+      
+      // Video
+      if (body.video) {
+        svg += renderVideo(body.video, colors, W, H);
       }
       
       // Shapes (SVG primitives)
@@ -2293,13 +3111,17 @@
         return width + padding * 2;
       }
       
+      // Calculate max table width for % calculations
+      const maxTableW = W - 240;
+      
       // Use custom colWidths if provided, otherwise auto-calculate
       let colWidths;
       if (style.colWidths && Array.isArray(style.colWidths)) {
         // Use provided widths (extend with auto for missing columns)
+        // Support both px and % values
         colWidths = headers.map((header, colIdx) => {
           if (style.colWidths[colIdx] !== undefined) {
-            return style.colWidths[colIdx];
+            return parseSize(style.colWidths[colIdx], maxTableW) || style.colWidths[colIdx];
           }
           // Auto-calculate for unspecified columns
           let maxWidth = estimateTextWidth(header, fontSize);
@@ -2327,7 +3149,6 @@
       
       // Calculate total table width
       const tableW = colWidths.reduce((sum, w) => sum + w, 0);
-      const maxTableW = W - 240;
       
       // Scale down if table is too wide (only for auto-calculated)
       if (!style.colWidths && tableW > maxTableW) {
@@ -2917,8 +3738,9 @@
       
       shapes.forEach(shape => {
         const type = shape.type || 'rect';
-        const x = shape.x || 0;
-        const y = shape.y || 0;
+        // Parse positions with % support
+        const x = parseSize(shape.x, W) || 0;
+        const y = parseSize(shape.y, H) || 0;
         const fill = shape.fill || colors.accent;
         const stroke = shape.stroke || 'none';
         const strokeWidth = shape.strokeWidth || 2;
@@ -2929,8 +3751,8 @@
         
         switch (type) {
           case 'rect': {
-            const width = shape.width || 200;
-            const height = shape.height || 100;
+            const width = parseSize(shape.width, W) || 200;
+            const height = parseSize(shape.height, H) || 100;
             const rx = shape.rx || 0;
             svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
@@ -2940,7 +3762,7 @@
           }
           
           case 'circle': {
-            const r = shape.r || 50;
+            const r = parseSize(shape.r, Math.min(W, H)) || 50;
             svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
               svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
@@ -2949,8 +3771,8 @@
           }
           
           case 'ellipse': {
-            const rx = shape.rx || 100;
-            const ry = shape.ry || 50;
+            const rx = parseSize(shape.rx, W) || 100;
+            const ry = parseSize(shape.ry, H) || 50;
             svg += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
               svg += `<text x="${x}" y="${y + labelSize/3}" text-anchor="middle" font-size="${labelSize}" fill="${labelColor}" font-family="${colors.headingFont}, ${colors.bodyFont}, sans-serif">${escapeHtml(label)}</text>`;
@@ -2959,8 +3781,8 @@
           }
           
           case 'line': {
-            const x2 = shape.x2 || x + 100;
-            const y2 = shape.y2 || y;
+            const x2 = parseSize(shape.x2, W) || x + 100;
+            const y2 = parseSize(shape.y2, H) || y;
             const lineStroke = stroke !== 'none' ? stroke : colors.text;
             const arrow = shape.arrow || false;
             svg += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${lineStroke}" stroke-width="${strokeWidth}" ${arrow ? 'marker-end="url(#arrowhead-text)"' : ''}/>`;
@@ -2968,8 +3790,8 @@
           }
           
           case 'arrow': {
-            const x2 = shape.x2 || x + 100;
-            const y2 = shape.y2 || y;
+            const x2 = parseSize(shape.x2, W) || x + 100;
+            const y2 = parseSize(shape.y2, H) || y;
             const arrowStroke = stroke !== 'none' ? stroke : colors.accent;
             svg += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${arrowStroke}" stroke-width="${strokeWidth}" marker-end="url(#arrowhead)"/>`;
             if (label) {
@@ -3009,7 +3831,7 @@
           }
           
           case 'diamond': {
-            const size = shape.size || 100;
+            const size = parseSize(shape.size, Math.min(W, H)) || 100;
             const cx = x;
             const cy = y;
             const points = `${cx},${cy-size/2} ${cx+size/2},${cy} ${cx},${cy+size/2} ${cx-size/2},${cy}`;
@@ -3021,8 +3843,8 @@
           }
           
           case 'triangle': {
-            const width = shape.width || 100;
-            const height = shape.height || 100;
+            const width = parseSize(shape.width, W) || 100;
+            const height = parseSize(shape.height, H) || 100;
             const points = `${x},${y+height} ${x+width/2},${y} ${x+width},${y+height}`;
             svg += `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
             if (label) {
@@ -3182,9 +4004,12 @@
       // Figure
       if (body.figure) {
         const imgSrc = getImageSrc(body.figure);
-        const imgW = 600, imgH = 400;
-        const imgX = W - imgW - 120;
-        const imgY = 200;
+        // Support % and px for figure size
+        const figureStyle = body.figureStyle || {};
+        const imgW = parseSize(figureStyle.width, W) || 600;
+        const imgH = parseSize(figureStyle.height, H) || 400;
+        const imgX = parseSize(figureStyle.x, W) ?? (W - imgW - 120);
+        const imgY = parseSize(figureStyle.y, H) ?? 200;
         
         svg += `<rect x="${imgX - 4}" y="${imgY - 4}" width="${imgW + 8}" height="${imgH + 8}" rx="8" fill="${colors.accent}" opacity="0.1"/>`;
         svg += `<image href="${imgSrc}" x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}" preserveAspectRatio="xMidYMid slice"/>`;
@@ -3746,6 +4571,133 @@
       return svg;
     }
 
+    // Render video embed
+    function renderVideo(videoConfig, colors, W, H) {
+      let svg = '';
+      
+      const url = videoConfig.url || videoConfig.src || '';
+      // Parse width/height with % support
+      const width = parseSize(videoConfig.width, W) || 960;
+      const height = parseSize(videoConfig.height, H) || 540;
+      const autoplay = videoConfig.autoplay || false;
+      const controls = videoConfig.controls !== false;
+      
+      // Center position (can also be specified with %)
+      const x = parseSize(videoConfig.x, W) ?? (W - width) / 2;
+      const y = parseSize(videoConfig.y, H) ?? 200;
+      
+      // Parse video URL
+      let videoId = '';
+      let platform = '';
+      
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        platform = 'youtube';
+        // Extract YouTube video ID
+        const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (match) videoId = match[1];
+      } else if (url.includes('vimeo.com')) {
+        platform = 'vimeo';
+        // Extract Vimeo video ID
+        const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+        if (match) videoId = match[1];
+      } else {
+        platform = 'local';
+      }
+      
+      if (platform === 'youtube' && videoId) {
+        // YouTube thumbnail with play button
+        const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        // Container with rounded corners
+        svg += `<defs>
+          <clipPath id="video-clip-${videoId}">
+            <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8"/>
+          </clipPath>
+        </defs>`;
+        
+        // Thumbnail image
+        svg += `<image href="${thumbnailUrl}" x="${x}" y="${y}" width="${width}" height="${height}" clip-path="url(#video-clip-${videoId})" preserveAspectRatio="xMidYMid slice"/>`;
+        
+        // Dark overlay
+        svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" fill="rgba(0,0,0,0.3)"/>`;
+        
+        // Play button circle
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        svg += `<circle cx="${cx}" cy="${cy}" r="40" fill="rgba(255,0,0,0.9)"/>`;
+        svg += `<polygon points="${cx - 12},${cy - 18} ${cx - 12},${cy + 18} ${cx + 18},${cy}" fill="white"/>`;
+        
+        // YouTube logo and URL text
+        svg += `<text x="${x + width/2}" y="${y + height - 30}" text-anchor="middle" font-size="18" fill="white" font-family="${colors.bodyFont}, sans-serif">▶ YouTube: ${escapeHtml(watchUrl)}</text>`;
+        
+        // Clickable link (for slideshow)
+        svg += `<a href="${watchUrl}" target="_blank">
+          <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="transparent" style="cursor: pointer;"/>
+        </a>`;
+        
+      } else if (platform === 'vimeo' && videoId) {
+        // Vimeo placeholder with play button
+        const watchUrl = `https://vimeo.com/${videoId}`;
+        
+        // Background
+        svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" fill="#1a1a1a"/>`;
+        
+        // Vimeo gradient overlay
+        svg += `<defs>
+          <linearGradient id="vimeo-grad-${videoId}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#1ab7ea;stop-opacity:0.3"/>
+            <stop offset="100%" style="stop-color:#162221;stop-opacity:0.8"/>
+          </linearGradient>
+        </defs>`;
+        svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" fill="url(#vimeo-grad-${videoId})"/>`;
+        
+        // Play button
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        svg += `<circle cx="${cx}" cy="${cy}" r="40" fill="#1ab7ea"/>`;
+        svg += `<polygon points="${cx - 12},${cy - 18} ${cx - 12},${cy + 18} ${cx + 18},${cy}" fill="white"/>`;
+        
+        // Vimeo text
+        svg += `<text x="${x + width/2}" y="${y + height - 30}" text-anchor="middle" font-size="18" fill="white" font-family="${colors.bodyFont}, sans-serif">▶ Vimeo: ${escapeHtml(watchUrl)}</text>`;
+        
+        // Clickable link
+        svg += `<a href="${watchUrl}" target="_blank">
+          <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="transparent" style="cursor: pointer;"/>
+        </a>`;
+        
+      } else if (platform === 'local' && url) {
+        // Local video using foreignObject
+        const videoSrc = getVideoSrc(url);
+        svg += `<foreignObject x="${x}" y="${y}" width="${width}" height="${height}">
+          <video xmlns="http://www.w3.org/1999/xhtml" 
+            width="${width}" height="${height}" 
+            ${controls ? 'controls' : ''} 
+            ${autoplay ? 'autoplay' : ''}
+            style="border-radius: 8px; background: #000;">
+            <source src="${videoSrc}" type="video/mp4"/>
+            Your browser does not support video.
+          </video>
+        </foreignObject>`;
+      } else {
+        // Placeholder for invalid URL
+        svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" fill="#1a1a1a"/>`;
+        svg += `<text x="${x + width/2}" y="${y + height/2 - 20}" text-anchor="middle" font-size="48" fill="#666">▶</text>`;
+        svg += `<text x="${x + width/2}" y="${y + height/2 + 30}" text-anchor="middle" font-size="20" fill="#666" font-family="${colors.bodyFont}, sans-serif">Video: ${escapeHtml(url || 'No URL')}</text>`;
+      }
+      
+      return svg;
+    }
+
+    function getVideoSrc(src) {
+      // Check if it's a data URL or external URL
+      if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+        return src;
+      }
+      // Check uploaded videos (if supported in future)
+      return src;
+    }
+
     function renderHeader(meta, colors, W, pageNum, totalPages) {
       let svg = '';
       const header = meta.header || {};
@@ -3828,6 +4780,22 @@
         .replace(/"/g, '&quot;');
     }
 
+    // Parse size value (px or %)
+    function parseSize(value, base) {
+      if (value === undefined || value === null) return null;
+      if (typeof value === 'number') return value;
+      const str = String(value).trim();
+      if (str.endsWith('%')) {
+        const percent = parseFloat(str);
+        if (!isNaN(percent)) {
+          return (percent / 100) * base;
+        }
+      }
+      // Parse as number (px)
+      const num = parseFloat(str);
+      return isNaN(num) ? null : num;
+    }
+
     // Navigation
     function prevSlide() {
       if (currentSlide > 0) {
@@ -3867,6 +4835,9 @@
       document.removeEventListener('keydown', slideshowKeyHandler);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      
+      // Disable laser pointer
+      disableLaser();
       
       // Exit fullscreen if active
       if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -3938,6 +4909,7 @@
       if (e.key === 'ArrowLeft') prevSlideshowSlide();
       if (e.key === 'ArrowRight' || e.key === ' ') nextSlideshowSlide();
       if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      if (e.key === 'l' || e.key === 'L') toggleLaser();
     }
 
     function renderSlideshowSlide() {
@@ -3949,6 +4921,10 @@
       pageInfo.textContent = `${slideshowSlide + 1} / ${total}`;
       
       const slide = parsedData.slides[slideshowSlide];
+      if (!slide) {
+        container.innerHTML = '<svg viewBox="0 0 1920 1080"><rect fill="#ffffff" width="1920" height="1080"/><text x="960" y="540" text-anchor="middle" fill="#999" font-size="48">Empty slide</text></svg>';
+        return;
+      }
       const meta = parsedData.meta || {};
       const globalFormat = meta.format || {};
       const slideFormat = slide.format || {};
@@ -3968,6 +4944,40 @@
       if (slideshowSlide < parsedData.slides.length - 1) {
         slideshowSlide++;
         renderSlideshowSlide();
+      }
+    }
+
+    // Laser pointer
+    function toggleLaser() {
+      laserEnabled = !laserEnabled;
+      const btn = document.getElementById('laser-btn');
+      const pointer = document.getElementById('laser-pointer');
+      
+      if (laserEnabled) {
+        btn.classList.add('active');
+        pointer.classList.add('active');
+        document.addEventListener('mousemove', moveLaser);
+      } else {
+        btn.classList.remove('active');
+        pointer.classList.remove('active');
+        document.removeEventListener('mousemove', moveLaser);
+      }
+    }
+
+    function moveLaser(e) {
+      const pointer = document.getElementById('laser-pointer');
+      pointer.style.left = e.clientX + 'px';
+      pointer.style.top = e.clientY + 'px';
+    }
+
+    function disableLaser() {
+      if (laserEnabled) {
+        laserEnabled = false;
+        const btn = document.getElementById('laser-btn');
+        const pointer = document.getElementById('laser-pointer');
+        btn.classList.remove('active');
+        pointer.classList.remove('active');
+        document.removeEventListener('mousemove', moveLaser);
       }
     }
 
@@ -4063,11 +5073,11 @@
 
     // Sample
     function loadSample() {
-      const sample = `# FrameNote v0.4.1 Sample - Templates & Themes Demo
+      const sample = `# FrameNote v0.5 Sample - Templates & Themes Demo
 meta:
   project: FrameNote Templates
   author: FrameNote Team
-  version: "0.4.1"
+  version: "0.5"
   date: "2025-01-01"
   # Theme can be set here (or use UI selector)
   # Options: default, corporate, minimal, dark, nature, sunset, ocean, lavender, rose, midnight
@@ -4096,7 +5106,7 @@ meta:
 slides:
   # Title Template
   - template: title
-    title: "FrameNote v0.4.1"
+    title: "FrameNote v0.5"
     subtitle: "Templates & Themes"
     author: "FrameNote Team"
     date: "2025"
@@ -4154,7 +5164,7 @@ slides:
         title: "PDL対応"
       - date: "v0.3"
         title: "テンプレート"
-      - date: "v0.4.1"
+      - date: "v0.5"
         title: "エクスポート"
 
   # Diagram
@@ -4315,13 +5325,17 @@ slides:
         const meta = parsedData.meta || {};
         const globalFormat = meta.format || {};
         const total = parsedData.slides.length;
+        let isFirstPage = true;
 
         for (let i = 0; i < total; i++) {
-          if (i > 0) {
+          const slide = parsedData.slides[i];
+          if (!slide) continue;  // Skip null slides
+          
+          if (!isFirstPage) {
             pdf.addPage([1920, 1080], 'landscape');
           }
+          isFirstPage = false;
 
-          const slide = parsedData.slides[i];
           const slideFormat = slide.format || {};
           const format = mergeFormat(globalFormat, slideFormat);
           
@@ -4336,7 +5350,7 @@ slides:
         pdf.setProperties({
           title: meta.project || 'Presentation',
           author: meta.author || 'FrameNote',
-          creator: 'FrameNote v0.4.1'
+          creator: 'FrameNote v0.5'
         });
 
         // Download
@@ -4389,7 +5403,7 @@ slides:
         // Set presentation properties
         pptx.author = meta.author || 'FrameNote';
         pptx.title = meta.project || 'Presentation';
-        pptx.subject = 'Created with FrameNote v0.4.1';
+        pptx.subject = 'Created with FrameNote v0.5';
         
         // Use standard 16:9 layout (13.33" x 7.5")
         pptx.layout = 'LAYOUT_16x9';
@@ -4403,6 +5417,8 @@ slides:
 
         for (let i = 0; i < total; i++) {
           const slideData = parsedData.slides[i];
+          if (!slideData) continue;  // Skip null slides
+          
           const slideFormat = slideData.format || {};
           const format = mergeFormat(globalFormat, slideFormat);
           const colors = {
@@ -4470,6 +5486,9 @@ slides:
       const accentHex = colors.accent.replace('#', '');
       const titleHex = colors.title.replace('#', '');
       const textHex = colors.text.replace('#', '');
+      const mutedHex = colors.muted ? colors.muted.replace('#', '') : '999999';
+      const bgHex = colors.background ? colors.background.replace('#', '') : 'FFFFFF';
+      const bulletHex = colors.bullet ? colors.bullet.replace('#', '') : accentHex;
 
       switch (data.template) {
         case 'title':
@@ -4679,6 +5698,398 @@ slides:
               });
             });
           }
+          break;
+
+        case 'image':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.2, w: '90%', h: 0.5,
+              fontSize: 24, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          if (data.image) {
+            // Add placeholder text for image
+            slide.addText(`[Image: ${data.image}]`, {
+              x: 1, y: 1, w: '85%', h: 4,
+              fontSize: 18, color: '999999', align: 'center', valign: 'middle'
+            });
+          }
+          if (data.caption) {
+            slide.addText(data.caption, {
+              x: 0.5, y: 5, w: '90%', h: 0.4,
+              fontSize: 18, color: mutedHex, align: 'center'
+            });
+          }
+          break;
+
+        case 'steps':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          const steps = data.steps || [];
+          if (steps.length > 0) {
+            const stepW = 2.5;
+            const stepH = 1.5;
+            const totalStepW = steps.length * stepW + (steps.length - 1) * 0.8;
+            const startStepX = (13.33 - totalStepW) / 2;
+            const stepY = 2.5;
+            
+            steps.forEach((step, idx) => {
+              const x = startStepX + idx * (stepW + 0.8);
+              
+              // Step box
+              slide.addShape('roundRect', {
+                x: x, y: stepY, w: stepW, h: stepH,
+                fill: { color: accentHex, transparency: 90 },
+                line: { color: accentHex, width: 1.5 }
+              });
+              
+              // Step number
+              slide.addShape('ellipse', {
+                x: x + stepW/2 - 0.2, y: stepY - 0.25, w: 0.4, h: 0.4,
+                fill: { color: accentHex }
+              });
+              slide.addText(String(idx + 1), {
+                x: x + stepW/2 - 0.2, y: stepY - 0.25, w: 0.4, h: 0.4,
+                fontSize: 14, bold: true, color: bgHex, align: 'center', valign: 'middle'
+              });
+              
+              // Step title
+              slide.addText(step.title || '', {
+                x: x, y: stepY + 0.3, w: stepW, h: 0.5,
+                fontSize: 16, bold: true, color: titleHex, align: 'center'
+              });
+              
+              // Step description
+              if (step.description) {
+                slide.addText(step.description, {
+                  x: x + 0.1, y: stepY + 0.8, w: stepW - 0.2, h: 0.6,
+                  fontSize: 12, color: textHex, align: 'center'
+                });
+              }
+              
+              // Arrow
+              if (idx < steps.length - 1) {
+                slide.addText('→', {
+                  x: x + stepW + 0.1, y: stepY + stepH/2 - 0.2, w: 0.6, h: 0.4,
+                  fontSize: 24, color: accentHex, align: 'center'
+                });
+              }
+            });
+          }
+          break;
+
+        case 'cards':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          const cards = data.cards || [];
+          if (cards.length > 0) {
+            const cols = data.columns || Math.min(cards.length, 4);
+            const rows = Math.ceil(cards.length / cols);
+            const cardW = 3;
+            const cardH = rows === 1 ? 3.5 : 2.5;
+            const gapX = 0.3;
+            const gapY = 0.3;
+            const totalCardW = cols * cardW + (cols - 1) * gapX;
+            const totalCardH = rows * cardH + (rows - 1) * gapY;
+            const startCardX = (13.33 - totalCardW) / 2;
+            const startCardY = (7.5 - totalCardH) / 2 + 0.3;
+            
+            cards.forEach((card, idx) => {
+              const col = idx % cols;
+              const row = Math.floor(idx / cols);
+              const x = startCardX + col * (cardW + gapX);
+              const y = startCardY + row * (cardH + gapY);
+              
+              // Card box
+              slide.addShape('roundRect', {
+                x: x, y: y, w: cardW, h: cardH,
+                fill: { color: bgHex },
+                line: { color: 'CCCCCC', width: 0.5 }
+              });
+              
+              // Accent top bar
+              slide.addShape('rect', {
+                x: x, y: y, w: cardW, h: 0.08,
+                fill: { color: accentHex }
+              });
+              
+              // Icon or number
+              if (card.icon) {
+                slide.addText(card.icon, {
+                  x: x, y: y + 0.2, w: cardW, h: 0.5,
+                  fontSize: 28, align: 'center'
+                });
+              }
+              
+              // Card title
+              slide.addText(card.title || '', {
+                x: x + 0.1, y: y + (card.icon ? 0.7 : 0.3), w: cardW - 0.2, h: 0.4,
+                fontSize: 14, bold: true, color: titleHex, align: 'center'
+              });
+              
+              // Card description
+              if (card.description) {
+                slide.addText(card.description, {
+                  x: x + 0.1, y: y + (card.icon ? 1.1 : 0.7), w: cardW - 0.2, h: cardH - 1.3,
+                  fontSize: 11, color: textHex, align: 'center'
+                });
+              }
+            });
+          }
+          break;
+
+        case 'twocolumn':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          
+          // Left column
+          if (data.left) {
+            if (data.left.title) {
+              slide.addText(data.left.title, {
+                x: 0.5, y: 1.1, w: 6, h: 0.5,
+                fontSize: 20, bold: true, color: accentHex
+              });
+            }
+            if (data.left.text) {
+              data.left.text.forEach((item, idx) => {
+                slide.addText('• ' + item, {
+                  x: 0.5, y: 1.7 + idx * 0.5, w: 6, h: 0.5,
+                  fontSize: 14, color: textHex
+                });
+              });
+            }
+          }
+          
+          // Divider
+          slide.addShape('rect', {
+            x: 6.5, y: 1, w: 0.02, h: 4.5, fill: { color: 'CCCCCC' }
+          });
+          
+          // Right column
+          if (data.right) {
+            if (data.right.title) {
+              slide.addText(data.right.title, {
+                x: 6.8, y: 1.1, w: 6, h: 0.5,
+                fontSize: 20, bold: true, color: accentHex
+              });
+            }
+            if (data.right.text) {
+              data.right.text.forEach((item, idx) => {
+                slide.addText('• ' + item, {
+                  x: 6.8, y: 1.7 + idx * 0.5, w: 6, h: 0.5,
+                  fontSize: 14, color: textHex
+                });
+              });
+            }
+          }
+          break;
+
+        case 'threecolumn':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          
+          const columns = [data.col1, data.col2, data.col3];
+          columns.forEach((col, idx) => {
+            if (col) {
+              const colX = 0.5 + idx * 4.3;
+              if (col.title) {
+                slide.addText(col.title, {
+                  x: colX, y: 1.1, w: 4, h: 0.5,
+                  fontSize: 18, bold: true, color: accentHex
+                });
+              }
+              if (col.text) {
+                col.text.forEach((item, itemIdx) => {
+                  slide.addText('• ' + item, {
+                    x: colX, y: 1.7 + itemIdx * 0.45, w: 4, h: 0.45,
+                    fontSize: 13, color: textHex
+                  });
+                });
+              }
+            }
+            
+            // Divider
+            if (idx < 2) {
+              slide.addShape('rect', {
+                x: colX + 4.1, y: 1, w: 0.02, h: 4.5, fill: { color: 'CCCCCC' }
+              });
+            }
+          });
+          break;
+
+        case 'blank':
+          // Blank template - just the body content if any
+          if (data.body && data.body.text) {
+            const textItems = Array.isArray(data.body.text) ? data.body.text : [data.body.text];
+            textItems.forEach((item, idx) => {
+              slide.addText(item, {
+                x: 1, y: 1 + idx * 0.5, w: '85%', h: 0.5,
+                fontSize: 18, color: textHex
+              });
+            });
+          }
+          break;
+
+        case 'bigtext':
+          const bigText = data.text || data.title || '';
+          const bigFontSize = Math.min(data.fontSize || 120, 72) / 1.5; // Scale down for PPTX
+          
+          slide.addText(bigText, {
+            x: 0.5, y: 2, w: '90%', h: 2,
+            fontSize: bigFontSize, bold: true, color: titleHex, align: 'center', valign: 'middle'
+          });
+          
+          if (data.subtitle) {
+            slide.addText(data.subtitle, {
+              x: 0.5, y: 4.2, w: '90%', h: 0.6,
+              fontSize: 24, color: mutedHex, align: 'center'
+            });
+          }
+          break;
+
+        case 'mindmap':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.2, w: '90%', h: 0.5,
+              fontSize: 28, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Mindmap center
+          const mm = data.mindmap || {};
+          slide.addShape('ellipse', {
+            x: 5.5, y: 2.8, w: 2.5, h: 1,
+            fill: { color: accentHex }
+          });
+          slide.addText(mm.center || 'Main Topic', {
+            x: 5.5, y: 2.8, w: 2.5, h: 1,
+            fontSize: 16, bold: true, color: bgHex, align: 'center', valign: 'middle'
+          });
+          // Branches (simplified)
+          (mm.branches || []).forEach((branch, idx) => {
+            const angle = (idx / (mm.branches.length || 1)) * 2 * Math.PI - Math.PI / 2;
+            const bx = 6.75 + 2.5 * Math.cos(angle);
+            const by = 3.3 + 1.5 * Math.sin(angle);
+            const branchColors = [accentHex, '10b981', 'f59e0b', 'ef4444', '8b5cf6'];
+            const bColor = branchColors[idx % branchColors.length];
+            
+            slide.addShape('roundRect', {
+              x: bx - 0.6, y: by - 0.25, w: 1.2, h: 0.5,
+              fill: { color: bColor }
+            });
+            slide.addText(branch.topic || '', {
+              x: bx - 0.6, y: by - 0.25, w: 1.2, h: 0.5,
+              fontSize: 11, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle'
+            });
+          });
+          break;
+
+        case 'video':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Video placeholder
+          const videoUrl = data.video?.url || data.video || '';
+          slide.addShape('rect', {
+            x: 1.5, y: 1.5, w: 10, h: 5,
+            fill: { color: '1a1a1a' }
+          });
+          slide.addText('▶', {
+            x: 5.5, y: 3.2, w: 2, h: 1.5,
+            fontSize: 48, color: 'FFFFFF', align: 'center'
+          });
+          slide.addText(videoUrl, {
+            x: 1.5, y: 6, w: 10, h: 0.4,
+            fontSize: 12, color: mutedHex, align: 'center'
+          });
+          break;
+
+        case 'table':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Parse and render table
+          if (data.table) {
+            const tableData = parseMarkdownTable(data.table);
+            if (tableData.headers.length > 0) {
+              const rows = [tableData.headers, ...tableData.rows];
+              slide.addTable(rows.map((row, ri) => 
+                row.map(cell => ({
+                  text: cell || '',
+                  options: {
+                    fill: ri === 0 ? { color: accentHex + '20' } : undefined,
+                    bold: ri === 0,
+                    fontSize: 14,
+                    color: textHex
+                  }
+                }))
+              ), {
+                x: 1, y: 1.2, w: 11,
+                border: { pt: 0.5, color: 'CCCCCC' }
+              });
+            }
+          }
+          break;
+
+        case 'code':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Code block
+          const codeContent = data.code?.content || data.code || '';
+          const codeLang = data.code?.language || data.language || '';
+          slide.addShape('rect', {
+            x: 1, y: 1.2, w: 11, h: 5,
+            fill: { color: '1e1e1e' }
+          });
+          if (codeLang) {
+            slide.addText(codeLang, {
+              x: 1, y: 1.2, w: 1.5, h: 0.4,
+              fontSize: 10, color: 'AAAAAA'
+            });
+          }
+          slide.addText(codeContent, {
+            x: 1.2, y: 1.6, w: 10.6, h: 4.4,
+            fontSize: 12, fontFace: 'Courier New', color: 'D4D4D4', valign: 'top'
+          });
+          break;
+
+        case 'flowchart':
+          if (data.title) {
+            slide.addText(data.title, {
+              x: 0.5, y: 0.3, w: '90%', h: 0.6,
+              fontSize: 32, bold: true, color: titleHex, align: 'center'
+            });
+          }
+          // Flowchart placeholder
+          slide.addText('[Flowchart - See PDF/HTML export for full rendering]', {
+            x: 1, y: 2.5, w: 11, h: 2,
+            fontSize: 18, color: mutedHex, align: 'center', valign: 'middle'
+          });
           break;
 
         default:
@@ -4937,10 +6348,13 @@ slides:
         '&display=swap';
 
       // Generate SVGs for all slides
-      const slideSVGs = parsedData.slides.map((slide, i) => {
+      const validSlides = parsedData.slides.filter(slide => slide !== null && slide !== undefined);
+      const filteredTotal = validSlides.length;
+      
+      const slideSVGs = validSlides.map((slide, i) => {
         const slideFormat = slide.format || {};
         const format = mergeFormat(globalFormat, slideFormat);
-        return generateSlideSVG(slide, meta, format, i + 1, total);
+        return generateSlideSVG(slide, meta, format, i + 1, filteredTotal);
       });
 
       // Build slide divs
@@ -4951,7 +6365,7 @@ slides:
       // Build script content separately to avoid parser issues
       const scriptContent = `
     let current = 0;
-    const total = ${total};
+    const total = ${filteredTotal};
     const slides = document.querySelectorAll('.slide');
     
     function show(n) {

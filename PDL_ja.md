@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### 詳細仕様 v0.4.1 (FrameNote)
+### 詳細仕様 v0.5 (FrameNote)
 
 ---
 
@@ -801,7 +801,7 @@ PDL は以下を規定しない。
 * PDL v0.x：実験的
 * PDL v1.0：後方互換保証
 
-FrameNote v0.4.1 は **PDL v0.4.1** に準拠する。
+FrameNote v0.5 は **PDL v0.5** に準拠する。
 
 ---
 
@@ -846,7 +846,7 @@ meta:
 slides:
   # タイトルスライド
   - template: title
-    title: "PDL v0.4.1 デモ"
+    title: "PDL v0.5 デモ"
     subtitle: "Presentation Description Language"
     author: "FrameNote"
     date: "2025"
@@ -906,9 +906,16 @@ slides:
 
 ## 付録C：更新履歴
 
-### v0.4.1
+### v0.5
 
 * フォント選択UIの同期を修正
+* フルスクリーンプレゼンテーションモードを追加
+* スライドショー時のクリックナビゲーションを追加
+* レーザーポインター機能を追加
+* スライドのドラッグ＆ドロップ並べ替えを追加
+* 動画埋め込み機能を追加（YouTube、Vimeo、ローカル）
+* %指定対応を追加（動画、画像、図形、テーブル列幅）
+* 13種類の新テンプレートを追加: image, steps, cards, twocolumn, threecolumn, blank, bigtext, mindmap, video, table, code, flowchart
 
 ### v0.4
 

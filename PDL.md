@@ -2,7 +2,7 @@
 
 ## Presentation Description Language
 
-### Detailed Specification v0.4.1 (FrameNote)
+### Detailed Specification v0.5 (FrameNote)
 
 ---
 
@@ -805,7 +805,7 @@ The following are reserved for future versions:
 * PDL v0.x: Experimental
 * PDL v1.0: Backward compatibility guaranteed
 
-FrameNote v0.4.1 conforms to **PDL v0.4.1**.
+FrameNote v0.5 conforms to **PDL v0.5**.
 
 ---
 
@@ -851,7 +851,7 @@ meta:
 slides:
   # Title slide
   - template: title
-    title: "PDL v0.4.1 Demo"
+    title: "PDL v0.5 Demo"
     subtitle: "Presentation Description Language"
     author: "FrameNote"
     date: "2025"
@@ -911,9 +911,16 @@ slides:
 
 ## Appendix C: Changelog
 
-### v0.4.1
+### v0.5
 
 * Fixed font selector UI synchronization
+* Added fullscreen presentation mode
+* Added click navigation in slideshow
+* Added laser pointer for presentations
+* Added drag & drop slide reordering
+* Added video embedding (YouTube, Vimeo, local files)
+* Added percentage size specification (video, figure, shapes, table columns)
+* Added 13 new templates: image, steps, cards, twocolumn, threecolumn, blank, bigtext, mindmap, video, table, code, flowchart
 
 ### v0.4
 
